@@ -6,9 +6,7 @@ install:
   - cd ../
   - git clone --recursive https://github.com/rust-lang/cargo
   - (cd cargo && make -j5 && sudo make install)
-  - pwd
-  - ls
-  - cd ../
+  - cd rustpy
 script:
   - cargo build
   - cargo test

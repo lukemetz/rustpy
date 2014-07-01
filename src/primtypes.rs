@@ -73,8 +73,6 @@ pub fn from_py_object<A : PyType>(obj : PyObject) -> Result<A, PyError> {
   PyType::from_py_object(obj)
 }
 
-
-
 macro_rules! tuple_pytype ({$length:expr,$(($refN:ident, $n:expr, $T:ident)),+} => (
   impl<$($T:PyType+Clone),+> PyType for ($($T,)+) {
     fn to_py_object(&self) -> Result<PyObject, PyError> {

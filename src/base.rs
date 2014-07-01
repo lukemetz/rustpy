@@ -40,7 +40,6 @@ pub struct PyObject {
   pub raw : *mut PyObjectRaw
 }
 
-
 impl PyObject {
   pub fn new(py_object_raw : *mut PyObjectRaw) -> PyObject {
     assert!(py_object_raw.is_not_null());
@@ -142,5 +141,4 @@ mod test {
     let result = try_or_fail!(from_py_object::<f32>(py_result));
     assert_eq!(result, 9f32);
   }
-
 }
