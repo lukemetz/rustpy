@@ -1,5 +1,5 @@
 use libc::c_long;
-
+use std::c_str::CString;
 pub use base::{PyObject, PyObjectRaw, PyType, PyState};
 pub use base::{PyError,
            FromTypeConversionError,
@@ -20,10 +20,8 @@ macro_rules! prim_pytype (
         }
       }
 
-      //TODO check to see if py_object is correct type before attempting to convert
       fn from_py_object(state : &PyState, py_object : PyObject) -> Result<$base_type, PyError>  {
         unsafe {
-          println!("{:?}", state.$check(py_object.raw));
           if py_object.raw.is_not_null() && state.$check(py_object.raw) > 0 {
             Ok(state.$back(py_object.raw) as $base_type)
           } else {
@@ -63,7 +61,6 @@ macro_rules! tuple_pytype ({$length:expr,$(($refN:ident, $n:expr, $T:ident)),+} 
       }
     }
 
-    // TODO check to see if py_object is correct type before attempting to convert
     fn from_py_object(state : &PyState, py_object : PyObject) -> Result<($($T,)+), PyError>  {
       unsafe {
         if py_object.raw.is_null() && state.PyTuple_Check(py_object.raw) > 0 {
@@ -104,6 +101,42 @@ tuple_pytype!(8, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C), (ref3, 3, D),
   (ref4, 4, E), (ref5, 5, F), (ref6, 6, G),(ref7, 7, H))
 tuple_pytype!(9, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C), (ref3, 3, D),
   (ref4, 4, E), (ref5, 5, F),(ref6, 6, G),(ref7, 7, H),(ref8, 8, I))
+
+impl PyType for String {
+  fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
+    self.as_slice().to_py_object(state)
+  }
+
+  fn from_py_object(state : &PyState, py_object : PyObject) -> Result<String, PyError>  {
+    unsafe {
+      if py_object.raw.is_not_null() && state.PyString_Check(py_object.raw) > 0 {
+        let c_str = state.PyString_AsString(py_object.raw);
+        let string = String::from_str(CString::new(c_str, false).as_str().unwrap());
+        Ok(string)
+      } else {
+        Err(FromTypeConversionError)
+      }
+    }
+  }
+}
+
+impl<'b> PyType for &'b str {
+  fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
+    unsafe {
+      let raw = state.PyString_FromString(self.to_c_str().unwrap());
+      if raw.is_not_null() && state.PyString_Check(raw) > 0 {
+        Ok(PyObject::new(state, raw))
+      } else {
+        Err(ToTypeConversionError)
+      }
+    }
+  }
+
+  #[allow(unused_variable)]
+  fn from_py_object(state : &PyState, py_object : PyObject) -> Result<&str, PyError>  {
+    unimplemented!();
+  }
+}
 
 #[cfg(test)]
 mod test {
@@ -187,5 +220,23 @@ mod test {
       Err(_) => (),
       Ok(x) => fail!("should have failed but got {:?}", x)
     };
+  }
+
+  #[test]
+  fn string_to_py_object_and_back() {
+    let py = PyState::new();
+    let value = String::from_str("Hello world");
+    let py_object = try_or_fail!(value.to_py_object(&py));
+    let result = try_or_fail!(py.from_py_object::<String>(py_object));
+    assert_eq!(result.as_slice(), "Hello world");
+  }
+
+  #[test]
+  fn ref_string_to_py_object_and_back_to_string() {
+    let py = PyState::new();
+    let value = "Hello world";
+    let py_object = try_or_fail!(value.to_py_object(&py));
+    let result = try_or_fail!(py.from_py_object::<String>(py_object));
+    assert_eq!(result.as_slice(), "Hello world");
   }
 }

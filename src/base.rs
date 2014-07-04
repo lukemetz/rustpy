@@ -28,6 +28,9 @@ extern {
   fn PyTuple_SetItem(tuple : *mut PyObjectRaw, pos : size_t, o : *mut PyObjectRaw);
   fn PyTuple_Size(tuple : *mut PyObjectRaw) -> c_long;
 
+  fn PyString_FromString(string : *const c_char) -> *mut PyObjectRaw;
+  fn PyString_AsString(obj: *mut PyObjectRaw) -> *const c_char;
+
   fn Py_IncRef(obj: *mut PyObjectRaw);
 }
 
@@ -38,6 +41,7 @@ extern {
   fn RPyFloat_CheckExact(obj : *mut PyObjectRaw) -> c_long;
   fn RPyTuple_Check(obj : *mut PyObjectRaw) -> c_long;
   fn RPyInt_Check(obj : *mut PyObjectRaw) -> c_long;
+  fn RPyString_Check(obj : *mut PyObjectRaw) -> c_long;
 }
 
 pub struct PyState {
@@ -126,6 +130,18 @@ impl PyState {
   pub unsafe fn PyInt_Check(&self, obj : *mut PyObjectRaw) -> c_long {
     RPyInt_Check(obj)
   }
+  #[allow(non_snake_case_functions)]
+  pub unsafe fn PyString_Check(&self, obj : *mut PyObjectRaw) -> c_long {
+    RPyString_Check(obj)
+  }
+  #[allow(non_snake_case_functions)]
+  pub unsafe fn PyString_FromString(&self, string : *const c_char) -> *mut PyObjectRaw{
+    PyString_FromString(string)
+  }
+  #[allow(non_snake_case_functions)]
+  pub unsafe fn PyString_AsString(&self, obj: *mut PyObjectRaw) -> *const c_char {
+    PyString_AsString(obj)
+  }
 }
 
 impl Drop for PyState {
@@ -135,7 +151,6 @@ impl Drop for PyState {
     }
   }
 }
-
 
 pub struct PyObject<'a> {
   pub state : &'a PyState,

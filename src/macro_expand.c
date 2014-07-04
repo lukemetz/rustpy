@@ -15,3 +15,7 @@ int RPyTuple_Check(PyObject* obj) {
 int RPyInt_Check(PyObject* obj) {
   return PyInt_Check(obj);
 }
+
+int RPyString_Check(PyObject* obj) {
+  return PyString_Check(obj);
+}
