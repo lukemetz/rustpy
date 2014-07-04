@@ -1,6 +1,8 @@
 #![crate_id = "rustpy"]
 #![crate_type = "lib"]
 #![feature(macro_rules)]
+#![feature(link_args)]
+#![feature(unsafe_destructor)]
 
 extern crate libc;
 extern crate sync;
