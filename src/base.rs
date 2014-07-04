@@ -44,12 +44,19 @@ extern {
   fn RPyString_Check(obj : *mut PyObjectRaw) -> c_long;
 }
 
+/// Struct to control interaction with the python interpreter.
+///
+/// There can only be one active PyState at a time, as on initialization
+/// a shared mutex gets locked. This allows for safe-ish execution of
+/// python at the cost of increased risk of deadlocks.
+
 pub struct PyState {
   #[allow(dead_code)]
   guard : Guard<'static>
 }
 
 impl PyState {
+  /// Get a new instance of the python interpreter.
   pub fn new() -> PyState {
     unsafe {
       let guard = PY_MUTEX.lock();
@@ -58,6 +65,7 @@ impl PyState {
     }
   }
 
+  /// Return the PyObject at the associated name. Will `Err` if no module found.
   pub fn get_module<'a>(&'a self, module_name : &str) -> Result<PyObject<'a>, PyError> {
     unsafe {
       let string = module_name.to_c_str().unwrap();
@@ -70,6 +78,7 @@ impl PyState {
     }
   }
 
+  /// Helper function to convert `PyObject` back to rust types.
   pub fn from_py_object<A : PyType>(&self, obj : PyObject) -> Result<A, PyError> {
     PyType::from_py_object(self, obj)
   }
@@ -142,6 +151,10 @@ impl PyState {
   pub unsafe fn PyString_AsString(&self, obj: *mut PyObjectRaw) -> *const c_char {
     PyString_AsString(obj)
   }
+  #[allow(non_snake_case_functions)]
+  pub unsafe fn PyObject_GetAttrString(&self, object : *mut PyObjectRaw, attr : *const c_char) -> *mut PyObjectRaw {
+    PyObject_GetAttrString(object, attr)
+  }
 }
 
 impl Drop for PyState {
@@ -152,20 +165,26 @@ impl Drop for PyState {
   }
 }
 
+/// Wrapper around python PyObject.
+
+/// A user should never construct these manually.
+
 pub struct PyObject<'a> {
   pub state : &'a PyState,
   pub raw : *mut PyObjectRaw
 }
 
 impl<'a> PyObject<'a> {
+  /// Wrap a raw PyObject pointer.
   pub fn new(state : &'a PyState, py_object_raw : *mut PyObjectRaw) -> PyObject<'a> {
     assert!(py_object_raw.is_not_null());
     PyObject { state : state, raw : py_object_raw }
   }
 
+  /// Get PyObject corresponding to a function
   pub fn get_func<'a>(&'a self, string : &str) -> Result<PyObject<'a>, PyError> {
     unsafe {
-      let py_func = PyObject_GetAttrString(self.raw, string.to_c_str().unwrap());
+      let py_func = self.state.PyObject_GetAttrString(self.raw, string.to_c_str().unwrap());
       if py_func.is_null() {
         Err(NullPyObject)
       } else {
@@ -174,9 +193,10 @@ impl<'a> PyObject<'a> {
     }
   }
 
-  pub fn call<'a>(&'a self, py_object : &PyObject) -> Result<PyObject<'a>, PyError>{
+  /// Call a PyObject with the tuple provided in `args`
+  pub fn call<'a>(&'a self, args: &PyObject) -> Result<PyObject<'a>, PyError>{
     unsafe {
-      let py_ret = PyObject_CallObject(self.raw, py_object.raw);
+      let py_ret = PyObject_CallObject(self.raw, args.raw);
       if py_ret.is_null() {
         Err(NullPyObject)
       } else {

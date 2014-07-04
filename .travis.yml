@@ -10,3 +10,4 @@ install:
 script:
   - cargo build
   - cargo test
+  - rustdoc src/rustpy.rs
