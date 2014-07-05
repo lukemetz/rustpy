@@ -2,9 +2,14 @@
 A simple library to allow for easy use of python from rust.
 
 This library is meant to be middle ware for users wanting to use
-python libraries from rust. It provides a way to interact
+python libraries from rust. It allows users who want to quickly use exciting
+tools, at the price of speed, and to get going fast.
+Originally it was intended to bootstrap machine learning for rust.
+
+It provides a way to interact
 with a python interpreter, via [`PyState`](struct.PyState.html) as well as quick conversion
 from rust types to python types via the [`PyType`](trait.PyType) trait.
+
 
 ```rust
 extern crate rustpy;

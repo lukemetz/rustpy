@@ -167,18 +167,23 @@ impl Drop for PyState {
 
 /// Wrapper around python PyObject.
 
-/// A user should never construct these manually.
-
 pub struct PyObject<'a> {
   pub state : &'a PyState,
   pub raw : *mut PyObjectRaw
 }
 
 impl<'a> PyObject<'a> {
-  /// Wrap a raw PyObject pointer.
+  /// Wrap a raw PyObject pointer. Should not be called by user
   pub fn new(state : &'a PyState, py_object_raw : *mut PyObjectRaw) -> PyObject<'a> {
     assert!(py_object_raw.is_not_null());
     PyObject { state : state, raw : py_object_raw }
+  }
+
+  pub fn empty_tuple(state :&'a PyState) -> PyObject<'a> {
+    unsafe {
+      let raw = state.PyTuple_New(0);
+      PyObject::new(state, raw)
+    }
   }
 
   /// Get PyObject corresponding to a function
@@ -194,7 +199,7 @@ impl<'a> PyObject<'a> {
   }
 
   /// Call a PyObject with the tuple provided in `args`
-  pub fn call<'a>(&'a self, args: &PyObject) -> Result<PyObject<'a>, PyError>{
+  pub fn call<'a>(&'a self, args: &PyObject) -> Result<PyObject<'a>, PyError> {
     unsafe {
       let py_ret = PyObject_CallObject(self.raw, args.raw);
       if py_ret.is_null() {
@@ -203,6 +208,13 @@ impl<'a> PyObject<'a> {
         Ok(PyObject::new(self.state, py_ret))
       }
     }
+  }
+
+  /// Helper function to call returning type
+  pub fn call_with_ret<'a, T : PyType>(&'a self, args: &PyObject) -> Result<T, PyError> {
+    self.call(args).and_then(|x| {
+      self.state.from_py_object::<T>(x)
+    })
   }
 }
 
@@ -231,10 +243,16 @@ pub trait PyType {
 #[cfg(test)]
 mod test {
   use super::PyState;
-  use primtypes::PyType;
+  use primtypes::{PyType, PyObject};
   macro_rules! try_or_fail (
       ($e:expr) => (match $e { Ok(e) => e, Err(e) => fail!("{}", e) })
   )
+
+  #[test]
+  fn test_empty_tuple_should_not_fail() {
+    let py = PyState::new();
+    let _ = PyObject::empty_tuple(&py);
+  }
 
   #[test]
   fn test_get_module() {
@@ -265,6 +283,16 @@ mod test {
     let arg = try_or_fail!((3f32, 2f32).to_py_object(&py));
     let py_result = try_or_fail!(func.call(&arg));
     let result = try_or_fail!(py.from_py_object::<f32>(py_result));
+    assert_eq!(result, 9f32);
+  }
+
+  #[test]
+  fn test_call_with_ret() {
+    let py = PyState::new();
+    let module = try_or_fail!(py.get_module("math"));
+    let func = try_or_fail!(module.get_func("pow"));
+    let arg = try_or_fail!((3f32, 2f32).to_py_object(&py));
+    let result = try_or_fail!(func.call_with_ret::<f32>(&arg));
     assert_eq!(result, 9f32);
   }
 }
