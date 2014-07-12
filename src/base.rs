@@ -34,8 +34,8 @@ extern {
   fn Py_IncRef(obj: *mut PyObjectRaw);
 }
 
-// TODO fix this nasty hack
-#[link_args="src/macro_expand.c -I/usr/include/python2.7"]
+#[link(name = "python2.7")]
+#[link(name = "macroexpand", kind = "static")]
 extern {
   fn RPyFloat_Check(obj : *mut PyObjectRaw) -> c_long;
   fn RPyFloat_CheckExact(obj : *mut PyObjectRaw) -> c_long;
@@ -187,7 +187,7 @@ impl<'a> PyObject<'a> {
   }
 
   /// Get PyObject corresponding to a function
-  pub fn get_func<'a>(&'a self, string : &str) -> Result<PyObject<'a>, PyError> {
+  pub fn get_func(&self, string : &str) -> Result<PyObject<'a>, PyError> {
     unsafe {
       let py_func = self.state.PyObject_GetAttrString(self.raw, string.to_c_str().unwrap());
       if py_func.is_null() {
@@ -199,7 +199,7 @@ impl<'a> PyObject<'a> {
   }
 
   /// Call a PyObject with the tuple provided in `args`
-  pub fn call<'a>(&'a self, args: &PyObject) -> Result<PyObject<'a>, PyError> {
+  pub fn call(&self, args: &PyObject) -> Result<PyObject<'a>, PyError> {
     unsafe {
       let py_ret = PyObject_CallObject(self.raw, args.raw);
       if py_ret.is_null() {
