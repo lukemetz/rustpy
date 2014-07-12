@@ -1,5 +1,7 @@
 use libc::{c_long, c_double, size_t, c_char};
 use sync::mutex::{StaticMutex, MUTEX_INIT, Guard};
+use std::ptr;
+use std::mem::transmute;
 
 static mut PY_MUTEX : StaticMutex = MUTEX_INIT;
 
@@ -16,6 +18,7 @@ extern {
 
   fn PyObject_CallObject(callable_object : *mut PyObjectRaw, args :*mut PyObjectRaw) -> *mut PyObjectRaw;
   fn PyObject_GetAttrString(object : *mut PyObjectRaw, attr : *const c_char) -> *mut PyObjectRaw;
+  fn PyObject_Str(obj: *mut PyObjectRaw) -> *mut PyObjectRaw;
 
   fn PyInt_FromLong(ival : c_long) -> *mut PyObjectRaw;
   fn PyInt_AsLong(obj : *mut PyObjectRaw) -> c_long;
@@ -32,6 +35,9 @@ extern {
   fn PyString_AsString(obj: *mut PyObjectRaw) -> *const c_char;
 
   fn Py_IncRef(obj: *mut PyObjectRaw);
+
+  fn PyErr_Fetch(ptype : *mut *mut PyObjectRaw, pvalue : *mut *mut PyObjectRaw, ptraceback : *mut *mut PyObjectRaw);
+  fn PyErr_NormalizeException(ptype : *mut *mut PyObjectRaw, pvalue : *mut *mut PyObjectRaw, ptraceback : *mut *mut PyObjectRaw);
 }
 
 #[link(name = "python2.7")]
@@ -70,7 +76,12 @@ impl PyState {
     unsafe {
       let string = module_name.to_c_str().unwrap();
       let py_module = PyImport_ImportModule(string);
-      if py_module.is_not_null() {
+
+      let exception = self.get_result_exception();
+
+      if exception.is_err() {
+        Err(exception.err().unwrap())
+      } else if py_module.is_not_null() {
         Ok(PyObject::new(self, py_module))
       } else {
         Err(NullPyObject)
@@ -81,6 +92,31 @@ impl PyState {
   /// Helper function to convert `PyObject` back to rust types.
   pub fn from_py_object<A : PyType>(&self, obj : PyObject) -> Result<A, PyError> {
     PyType::from_py_object(self, obj)
+  }
+
+  /// Low level function to check for python inturpreter errors
+  pub fn get_result_exception(&self) -> Result<(), PyError> {
+    unsafe {
+      let ptype : *mut PyObjectRaw = ptr::mut_null();
+      let pvalue : *mut PyObjectRaw = ptr::mut_null();
+      let ptraceback : *mut PyObjectRaw = ptr::mut_null();
+      self.PyErr_Fetch(transmute(&ptype),
+                       transmute(&pvalue),
+                       transmute(&ptraceback));
+      self.PyErr_NormalizeException(transmute(&ptype),
+                       transmute(&pvalue),
+                       transmute(&ptraceback));
+      if pvalue.is_null() {
+        Ok(())
+      } else {
+        let base = PyObject::new(self, PyObject_Str(pvalue));
+        let error_type_string = PyObject_GetAttrString(ptype, "__name__".to_c_str().unwrap());
+        let error_type = PyObject::new(self, error_type_string);
+        let base_string = self.from_py_object::<String>(base).unwrap();
+        let error_type_string = self.from_py_object::<String>(error_type).unwrap();
+        Err(PyException(error_type_string + " : ".to_string() + base_string))
+      }
+    }
   }
 
   #[allow(non_snake_case_functions)]
@@ -155,6 +191,16 @@ impl PyState {
   pub unsafe fn PyObject_GetAttrString(&self, object : *mut PyObjectRaw, attr : *const c_char) -> *mut PyObjectRaw {
     PyObject_GetAttrString(object, attr)
   }
+
+  #[allow(non_snake_case_functions)]
+  pub unsafe fn PyErr_Fetch(&self, ptype : *mut *mut PyObjectRaw, pvalue : *mut *mut PyObjectRaw, ptraceback : *mut *mut PyObjectRaw) {
+    PyErr_Fetch(ptype, pvalue, ptraceback);
+  }
+
+  #[allow(non_snake_case_functions)]
+  pub unsafe fn PyErr_NormalizeException(&self, ptype : *mut *mut PyObjectRaw, pvalue : *mut *mut PyObjectRaw, ptraceback : *mut *mut PyObjectRaw) {
+    PyErr_NormalizeException(ptype, pvalue, ptraceback);
+  }
 }
 
 impl Drop for PyState {
@@ -190,7 +236,11 @@ impl<'a> PyObject<'a> {
   pub fn get_func(&self, string : &str) -> Result<PyObject<'a>, PyError> {
     unsafe {
       let py_func = self.state.PyObject_GetAttrString(self.raw, string.to_c_str().unwrap());
-      if py_func.is_null() {
+
+      let exception = self.state.get_result_exception();
+      if exception.is_err() {
+        Err(exception.err().unwrap())
+      } else if py_func.is_null() {
         Err(NullPyObject)
       } else {
         Ok(PyObject::new(self.state, py_func))
@@ -202,7 +252,10 @@ impl<'a> PyObject<'a> {
   pub fn call(&self, args: &PyObject) -> Result<PyObject<'a>, PyError> {
     unsafe {
       let py_ret = PyObject_CallObject(self.raw, args.raw);
-      if py_ret.is_null() {
+      let exception = self.state.get_result_exception();
+      if exception.is_err() {
+        Err(exception.err().unwrap())
+      } else if py_ret.is_null() {
         Err(NullPyObject)
       } else {
         Ok(PyObject::new(self.state, py_ret))
@@ -232,6 +285,7 @@ pub enum PyError {
   FromTypeConversionError,
   ToTypeConversionError,
   StringConversionError,
+  PyException(String),
   NullPyObject,
 }
 
@@ -244,6 +298,7 @@ pub trait PyType {
 mod test {
   use super::PyState;
   use primtypes::{PyType, PyObject};
+  use super::PyException;
   macro_rules! try_or_fail (
       ($e:expr) => (match $e { Ok(e) => e, Err(e) => fail!("{}", e) })
   )
@@ -284,6 +339,44 @@ mod test {
     let py_result = try_or_fail!(func.call(&arg));
     let result = try_or_fail!(py.from_py_object::<f32>(py_result));
     assert_eq!(result, 9f32);
+  }
+
+  #[test]
+  fn test_exceptions_module() {
+    let py = PyState::new();
+    let module = py.get_module("mathSpelledWrong");
+    match module {
+      Ok(_) => fail!("Did not return Err"),
+      Err(PyException(s)) => assert_eq!(s.as_slice(), "ImportError : No module named mathSpelledWrong"),
+      Err(e) => fail!("Got unexpected error: {:?}", e)
+    };
+  }
+
+  #[test]
+  fn test_exceptions_function_lookup() {
+    let py = PyState::new();
+    let module = try_or_fail!(py.get_module("math"));
+    let func = module.get_func("powMissSpelled");
+    match func {
+      Ok(_) => fail!("Did not return Err"),
+      Err(PyException(s)) => assert_eq!(s.as_slice(), "AttributeError : 'module' object has no attribute 'powMissSpelled'"),
+      Err(e) => fail!("Got unexpected error: {:?}", e)
+    };
+  }
+
+  #[test]
+  fn test_exceptions_function_call() {
+    let py = PyState::new();
+    let module = try_or_fail!(py.get_module("math"));
+    let func = try_or_fail!(module.get_func("pow"));
+    let badarg = try_or_fail!((3f32, 2f32, 314i).to_py_object(&py));
+    let res = func.call(&badarg);
+    println!("{:?}", res);
+    match res{
+      Ok(_) => fail!("Did not return Err"),
+      Err(PyException(s)) => assert_eq!(s.as_slice(), "TypeError : pow expected 2 arguments, got 3"),
+      Err(e) => fail!("Got unexpected error: {:?}", e)
+    };
   }
 
   #[test]
