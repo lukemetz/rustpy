@@ -26,7 +26,7 @@ fn main() {
 }
 ```
 */
-#![crate_id = "rustpy"]
+#![crate_name = "rustpy"]
 #![crate_type = "lib"]
 #![feature(macro_rules)]
 #![feature(link_args)]

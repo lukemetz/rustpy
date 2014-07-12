@@ -2,9 +2,11 @@ use libc::{c_long, c_double, size_t, c_char};
 use sync::mutex::{StaticMutex, MUTEX_INIT, Guard};
 use std::ptr;
 use std::mem::transmute;
+use std::fmt;
 
 static mut PY_MUTEX : StaticMutex = MUTEX_INIT;
 
+#[deriving(Show)]
 pub struct PyObjectRaw;
 
 #[link(name = "python2.7")]
@@ -212,7 +214,6 @@ impl Drop for PyState {
 }
 
 /// Wrapper around python PyObject.
-
 pub struct PyObject<'a> {
   pub state : &'a PyState,
   pub raw : *mut PyObjectRaw
@@ -277,6 +278,12 @@ impl<'a> Drop for PyObject<'a> {
     unsafe {
      self.state.Py_DecRef(self.raw);
     }
+  }
+}
+
+impl<'a> fmt::Show for PyObject<'a> {
+  fn fmt(&self, fmt : &mut fmt::Formatter) -> fmt::Result {
+    write!(fmt, "PyObject")
   }
 }
 
@@ -372,7 +379,7 @@ mod test {
     let badarg = try_or_fail!((3f32, 2f32, 314i).to_py_object(&py));
     let res = func.call(&badarg);
     println!("{:?}", res);
-    match res{
+    match res {
       Ok(_) => fail!("Did not return Err"),
       Err(PyException(s)) => assert_eq!(s.as_slice(), "TypeError : pow expected 2 arguments, got 3"),
       Err(e) => fail!("Got unexpected error: {:?}", e)
