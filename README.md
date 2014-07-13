@@ -1,6 +1,29 @@
 Rustpy
 =====
 
-A library that aims to make it easier to wrap python libraries to rust.
+A simple library to allow for easy use of python from rust.
 
-Documentation and sample usage comming soon.
+This library is meant to be middle ware for users wanting to use
+python libraries from rust. It allows users who want to quickly use exciting
+tools, at the price of speed, and to get going fast.
+Originally it was intended to bootstrap machine learning for rust.
+
+It provides a way to interact
+with a python interpreter, via [`PyState`](struct.PyState.html) as well as quick conversion
+from rust types to python types via the [`PyType`](trait.PyType) trait.
+
+
+```rust
+extern crate rustpy;
+use rustpy::{PyType, PyState};
+
+fn main() {
+  let py = PyState::new();
+  let module = py.get_module("math").unwrap();
+  let func = module.get_func("sqrt").unwrap();
+  let args = (144f32, ).to_py_object(&py).unwrap();
+  let untyped_res = func.call(&args).unwrap();
+  let result = py.from_py_object::<f32>(untyped_res).unwrap();
+  assert_eq!(result, 12f32);
+}
+```
