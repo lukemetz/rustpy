@@ -8,6 +8,9 @@ python libraries from rust. It allows users who want to quickly use existing
 tools, at the price of speed, and to get going fast.
 Originally it was intended to bootstrap machine learning for rust.
 
+See (pysmtplib.rs)[https://github.com/lukemetz/pysmtplib.rs] for an
+example of how to bind enough smtplib to send emails.
+
 It provides a way to interact
 with a python interpreter, via PyState as well as quick conversion
 from rust types to python types via the PyType trait.
