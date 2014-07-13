@@ -27,7 +27,6 @@ fn main() {
 }
 ```
 */
-#![crate_name = "rustpy"]
 #![crate_type = "lib"]
 #![feature(macro_rules)]
 #![feature(link_args)]
@@ -42,3 +41,4 @@ pub use base::{PyType, PyState, PyObject, PyObjectRaw, PyError};
 
 mod base;
 mod primtypes;
+mod ffi;
