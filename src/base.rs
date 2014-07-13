@@ -74,7 +74,6 @@ impl PyState {
       }
     }
   }
-
 }
 
 impl Drop for PyState {
@@ -98,6 +97,7 @@ impl<'a> PyObject<'a> {
     PyObject { state : state, raw : py_object_raw }
   }
 
+  /// Constructor for empty PyObject tuple for void functions
   pub fn empty_tuple(state :&'a PyState) -> PyObject<'a> {
     unsafe {
       let raw = state.PyTuple_New(0);
@@ -155,10 +155,17 @@ impl<'a> Drop for PyObject<'a> {
 
 impl<'a> fmt::Show for PyObject<'a> {
   fn fmt(&self, fmt : &mut fmt::Formatter) -> fmt::Result {
+    // TODO more useful information here
     write!(fmt, "PyObject")
   }
 }
 
+/// Possible errors while using rustpy
+///
+/// Generally speaking, all errors are from this library or user
+/// interaction with this library such as passing in wrong types of PyObject.
+/// The PyExecption error is an exception from python that causes a function or
+/// operation to fail.
 #[deriving(Show)]
 pub enum PyError {
   FromTypeConversionError,
@@ -168,6 +175,7 @@ pub enum PyError {
   NullPyObject,
 }
 
+/// Trait to convert objects to and from python
 pub trait PyType {
   fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError>;
   fn from_py_object(state : &PyState, py_object : PyObject) -> Result<Self, PyError>;
@@ -250,7 +258,6 @@ mod test {
     let func = try_or_fail!(module.get_func("pow"));
     let badarg = try_or_fail!((3f32, 2f32, 314i).to_py_object(&py));
     let res = func.call(&badarg);
-    println!("{:?}", res);
     match res {
       Ok(_) => fail!("Did not return Err"),
       Err(PyException(s)) => assert_eq!(s.as_slice(), "TypeError : pow expected 2 arguments, got 3"),
