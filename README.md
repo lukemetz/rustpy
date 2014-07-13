@@ -4,7 +4,7 @@ Rustpy
 A simple library to allow for easy use of python from rust.
 
 This library is meant to be middle ware for users wanting to use
-python libraries from rust. It allows users who want to quickly use exciting
+python libraries from rust. It allows users who want to quickly use existing
 tools, at the price of speed, and to get going fast.
 Originally it was intended to bootstrap machine learning for rust.
 
@@ -17,7 +17,7 @@ On construction, it grabs a global lock to prevent more than one thread from
 interacting with the interpreter thus making it very easy to deadlock.
 
 For more documentation, run `rustdoc src/rustpy.rs` and look at
-doc/rustpy/index.html.
+doc/rustpy/index.html. Pull requests are welcome!
 
 
 ```rust
