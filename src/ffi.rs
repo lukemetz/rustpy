@@ -1,6 +1,8 @@
 use libc::{c_long, c_double, size_t, c_char};
 use base::PyState;
 
+
+/// Wrapper around the PyObject pointer that the python capi uses.
 #[deriving(Show)]
 pub struct PyObjectRaw;
 
@@ -47,6 +49,7 @@ extern {
   fn RPyString_Check(obj : *mut PyObjectRaw) -> c_long;
 }
 
+/// Trait to allow interaction with the python interpreter.
 pub trait PythonCAPI {
   #[allow(non_snake_case_functions)]
   unsafe fn Py_Initialize(&self) {

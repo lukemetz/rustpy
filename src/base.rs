@@ -11,7 +11,6 @@ static mut PY_MUTEX : StaticMutex = MUTEX_INIT;
 /// There can only be one active PyState at a time, as on initialization
 /// a shared mutex gets locked. This allows for safe-ish execution of
 /// python at the cost of increased risk of deadlocks.
-
 pub struct PyState {
   #[allow(dead_code)]
   guard : Guard<'static>
