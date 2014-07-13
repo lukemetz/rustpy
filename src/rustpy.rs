@@ -15,13 +15,14 @@ from rust types to python types via the [`PyType`](trait.PyType) trait.
 extern crate rustpy;
 use rustpy::{PyType, PyState};
 
+
 fn main() {
   let py = PyState::new();
-  let module = try!(py.get_module("math"));
-  let func = try!(module.get_func("sqrt"));
-  let args = try!((144f32, ).to_py_object(&py));
-  let untyped_res = try!(func.call(&args));
-  let result = try!(py.from_py_object::<f32>(untyped_res));
+  let module = py.get_module("math").unwrap();
+  let func = module.get_func("sqrt").unwrap();
+  let args = (144f32, ).to_py_object(&py).unwrap();
+  let untyped_res = func.call(&args).unwrap();
+  let result = py.from_py_object::<f32>(untyped_res).unwrap();
   assert_eq!(result, 12f32);
 }
 ```
