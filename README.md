@@ -9,8 +9,12 @@ tools, at the price of speed, and to get going fast.
 Originally it was intended to bootstrap machine learning for rust.
 
 It provides a way to interact
-with a python interpreter, via [`PyState`](struct.PyState.html) as well as quick conversion
-from rust types to python types via the [`PyType`](trait.PyType) trait.
+with a python interpreter, via PyState as well as quick conversion
+from rust types to python types via the PyType trait.
+
+Important note: Only create one instance of PyState at a time.
+On construction, it grabs a global lock to prevent more than one thread from
+interacting with the interpreter thus making it very easy to deadlock.
 
 
 ```rust
