@@ -4,8 +4,8 @@ Rustpy
 A simple library to allow for easy use of python from rust.
 
 This library is meant to be middle ware for users wanting to use
-python libraries from rust. It allows users who want to quickly use existing
-tools do so and get working on interesting things fast!
+python libraries from rust. It allows users to quickly use existing
+tools and get working on interesting things fast!
 
 See [pysmtplib.rs](https://github.com/lukemetz/pysmtplib.rs) for an
 example of how to bind enough smtplib to send emails.
