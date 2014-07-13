@@ -16,6 +16,9 @@ Important note: Only create one instance of PyState at a time.
 On construction, it grabs a global lock to prevent more than one thread from
 interacting with the interpreter thus making it very easy to deadlock.
 
+For more documentation, run `rustdoc src/rustpy.rs` and look at
+doc/rustpy/index.html.
+
 
 ```rust
 extern crate rustpy;
