@@ -9,11 +9,7 @@ all: libmacroexpand.a
 	$(CC) $< -o $@ -c $(CFLAGS)
 
 libmacroexpand.a: macroexpand.o
-	ls
-	pwd
-	env
-	mkdir -p ../target
-	$(AR) rcs ../target/libmacroexpand.a macroexpand.o
+	$(AR) rcs ../libmacroexpand.a macroexpand.o
 
 .PHONY: clean
 clean:
