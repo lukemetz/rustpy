@@ -155,8 +155,11 @@ impl<'a> Drop for PyObject<'a> {
 
 impl<'a> fmt::Show for PyObject<'a> {
   fn fmt(&self, fmt : &mut fmt::Formatter) -> fmt::Result {
-    // TODO more useful information here
-    write!(fmt, "PyObject")
+    unsafe {
+      let string = self.state.PyObject_Str(self.raw);
+      let result = self.state.from_py_object::<String>(PyObject::new(self.state, string)).unwrap();
+      write!(fmt, "PyObject{{{}}}", result)
+    }
   }
 }
 
@@ -273,5 +276,11 @@ mod test {
     let arg = try_or_fail!((3f32, 2f32).to_py_object(&py));
     let result = try_or_fail!(func.call_with_ret::<f32>(&arg));
     assert_eq!(result, 9f32);
+  }
+
+  #[test]
+  fn test_py_object_show() {
+    let py = PyState::new();
+    assert_eq!(format!("{}", (1i, 2f32).to_py_object(&py).unwrap()), "PyObject{(1, 2.0)}".to_string());
   }
 }
