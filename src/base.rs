@@ -150,6 +150,14 @@ impl<'a> PyObject<'a> {
       })
     })
   }
+
+  pub fn call_func_with_ret<'a, I : PyType, R : PyType>(&'a self, name : &str, args : I) -> Result<R, PyError> {
+    self.get_func(name).and_then(|x| {
+      args.to_py_object(self.state).and_then(|input| {
+          x.call_with_ret(&input)
+      })
+    })
+  }
 }
 
 #[unsafe_destructor]
@@ -293,6 +301,14 @@ mod test {
     let obj = try_or_fail!(module.call_func("pow", (3f32, 2f32)));
     let result = try_or_fail!(py.from_py_object::<f32>(obj));
 
+    assert_eq!(result, 9f32);
+  }
+
+  #[test]
+  fn test_call_func_with_ret() {
+    let py = PyState::new();
+    let module = try_or_fail!(py.get_module("math"));
+    let result : f32 = try_or_fail!(module.call_func_with_ret("pow", (3f32, 2f32)));
     assert_eq!(result, 9f32);
   }
 
