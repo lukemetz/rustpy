@@ -110,18 +110,29 @@ impl<'a> PyObject<'a> {
 
   /// Get PyObject corresponding to a function
   pub fn get_func(&self, string : &str) -> Result<PyObject<'a>, PyError> {
-    unsafe {
-      let py_func = self.state.PyObject_GetAttrString(self.raw, string.to_c_str().unwrap());
+      self.get_member_obj(string)
+  }
 
+  /// Get a member variable as PyObject
+  pub fn get_member_obj(&self, name: &str) -> Result<PyObject<'a>, PyError> {
+    unsafe {
+      let py_member = self.state.PyObject_GetAttrString(self.raw, name.to_c_str().unwrap());
       let exception = self.state.get_result_exception();
       if exception.is_err() {
         Err(exception.err().unwrap())
-      } else if py_func.is_null() {
+      } else if py_member.is_null() {
         Err(NullPyObject)
       } else {
-        Ok(PyObject::new(self.state, py_func))
+        Ok(PyObject::new(self.state, py_member))
       }
     }
+  }
+
+  /// Get member variable as native type
+  pub fn get_member<T : PyType>(&self, name: &str) -> Result<T, PyError> {
+    self.get_member_obj(name).and_then(|x| {
+      self.state.from_py_object(x)
+    })
   }
 
   /// Call a PyObject with the tuple provided in `args`
@@ -313,6 +324,14 @@ mod test {
     let module = try_or_fail!(py.get_module("math"));
     let result : f32 = try_or_fail!(module.call_func_with_ret("pow", (3f32, 2f32)));
     assert_eq!(result, 9f32);
+  }
+
+  #[test]
+  fn test_get_member() {
+    let py = PyState::new();
+    let module = try_or_fail!(py.get_module("math"));
+    let result : f32 = try_or_fail!(module.get_member("pi"));
+    assert!(result - 3.141593 < 0.001);
   }
 
   #[test]
