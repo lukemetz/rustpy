@@ -139,10 +139,24 @@ impl<'b> PyType for &'b str {
   }
 }
 
+/// Structure that represents an empty tuple in python
+pub struct NoArgs;
+
+impl PyType for NoArgs {
+  fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
+    Ok(PyObject::empty_tuple(state))
+  }
+
+  #[allow(unused_variable)]
+  fn from_py_object(state : &PyState, py_object : PyObject) -> Result<NoArgs, PyError>  {
+    Ok(NoArgs)
+  }
+}
+
 #[cfg(test)]
 mod test {
   use base::PyState;
-  use super::PyType;
+  use super::{PyType, NoArgs};
   macro_rules! try_or_fail (
       ($e:expr) => (match $e { Ok(e) => e, Err(e) => fail!("{}", e) })
   )
@@ -239,5 +253,14 @@ mod test {
     let py_object = try_or_fail!(value.to_py_object(&py));
     let result = try_or_fail!(py.from_py_object::<String>(py_object));
     assert_eq!(result.as_slice(), "Hello world");
+  }
+
+  #[test]
+  fn no_args() {
+    // Just Don't fail to convert. Assuming its correct
+    let py = PyState::new();
+    let value = NoArgs;
+    let py_object = try_or_fail!(value.to_py_object(&py));
+    let _ = try_or_fail!(py.from_py_object::<NoArgs>(py_object));
   }
 }
