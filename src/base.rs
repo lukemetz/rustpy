@@ -78,9 +78,12 @@ impl PyState {
 
 impl Drop for PyState {
   fn drop(&mut self) {
-    unsafe {
-      self.Py_Finalize();
-    }
+    // This is a bug. Numpy should properly clean up after itself but it doesnt.
+    // This will continue to allow for multiple PyState, but will probably
+    // cause memory leaks.
+    //unsafe {
+      //self.Py_Finalize();
+    //}
   }
 }
 
