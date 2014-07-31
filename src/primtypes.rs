@@ -134,7 +134,7 @@ impl<'b> PyType for &'b str {
   }
 
   #[allow(unused_variable)]
-  fn from_py_object(state : &PyState, py_object : PyObject) -> Result<&str, PyError>  {
+  fn from_py_object(state : &PyState, py_object : PyObject) -> Result<&'b str, PyError>  {
     unimplemented!();
   }
 }
