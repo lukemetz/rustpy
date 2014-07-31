@@ -183,6 +183,16 @@ impl<'a> Drop for PyObject<'a> {
   }
 }
 
+// TODO this seems unsafe / bad. Should probably shift to ARC or something
+impl<'a> Clone for PyObject<'a> {
+  fn clone(&self) -> PyObject<'a> {
+    unsafe {
+      self.state.Py_IncRef(self.raw);
+    }
+    PyObject::new(self.state, self.raw.clone())
+  }
+}
+
 impl<'a> fmt::Show for PyObject<'a> {
   fn fmt(&self, fmt : &mut fmt::Formatter) -> fmt::Result {
     unsafe {
@@ -210,8 +220,8 @@ pub enum PyError {
 
 /// Trait to convert objects to and from python
 pub trait PyType {
-  fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError>;
-  fn from_py_object(state : &PyState, py_object : PyObject) -> Result<Self, PyError>;
+  fn to_py_object<'a>(&'a self, state : &'a PyState) -> Result<PyObject<'a>, PyError>;
+  fn from_py_object<'a>(state : &'a PyState, py_object : PyObject<'a>) -> Result<Self, PyError>;
 }
 
 #[cfg(test)]
