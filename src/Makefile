@@ -1,5 +1,5 @@
-CC ?= gcc
-CFLAGS += `python2.7-config --cflags`
+CC = gcc
+CFLAGS += `python2.7-config --cflags` -fPIC --static
 AR ?= ar
 
 .PHONY: all

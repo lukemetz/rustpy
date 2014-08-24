@@ -4,6 +4,7 @@ use base::PyState;
 
 /// Wrapper around the PyObject pointer that the python capi uses.
 #[deriving(Show)]
+#[repr(C)]
 pub struct PyObjectRaw;
 
 #[link(name = "python2.7")]
