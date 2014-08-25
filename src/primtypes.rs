@@ -45,7 +45,7 @@ prim_pytype!(u32, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check)
 prim_pytype!(u64, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check)
 
 macro_rules! tuple_pytype ({$length:expr,$(($refN:ident, $n:expr, $T:ident)),+} => (
-  impl<$($T:PyType+Clone),+> PyType for ($($T,)+) {
+  impl<$($T:PyType),+> PyType for ($($T,)+) {
     fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
       $(let $refN = self.$refN();)+
       unsafe {
