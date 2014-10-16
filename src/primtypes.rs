@@ -1,4 +1,4 @@
-use libc::c_long;
+use libc::{c_long, size_t};
 use std::c_str::CString;
 pub use base::{PyObject, PyType, PyState};
 pub use ffi::{PythonCAPI, PyObjectRaw};
@@ -87,6 +87,44 @@ macro_rules! tuple_pytype ({$length:expr,$(($refN:ident, $n:expr, $T:ident)),+} 
     }
   }
 ))
+
+impl<T: PyType> PyType for Vec<T> {
+  fn to_py_object<'a>(&'a self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
+    unsafe {
+      let raw = state.PyList_New(self.len() as size_t);
+      for (i, item) in self.iter().enumerate() {
+        let pyitem = try!(item.to_py_object(state));
+        state.Py_IncRef(pyitem.raw);
+        state.PyList_SetItem(raw, i as size_t, pyitem.raw);
+      }
+      if raw.is_not_null() {
+        Ok(PyObject::new(state, raw))
+      } else {
+        Err(ToTypeConversionError)
+      }
+    }
+  }
+
+  fn from_py_object(state : &PyState, py_object : PyObject) -> Result<Vec<T>, PyError> {
+    unsafe {
+      if py_object.raw.is_not_null() && state.PyList_Check(py_object.raw) > 0 {
+        let raw = py_object.raw;
+        let size = state.PyList_Size(raw) as uint;
+        let mut v = Vec::with_capacity(size);
+        for i in range(0, size) {
+          let rawitem = state.PyList_GetItem(raw, i as size_t);
+          if rawitem.is_null() { return Err(FromTypeConversionError); }
+          let pyitem = PyObject::new(state, rawitem);
+          let item = try!(state.from_py_object::<T>(pyitem));
+          v.push(item);
+        }
+        Ok(v)
+      } else {
+        Err(FromTypeConversionError)
+      }
+    }
+  }
+}
 
 tuple_pytype!(1,(ref0, 0, A))
 tuple_pytype!(2,(ref0, 0, A),(ref1, 1, B))
@@ -200,6 +238,15 @@ mod test {
   tuple_to_py_object_and_back!((1i,2i,3i,4i), (int,int,int,int), to_and_from_tuple4)
   tuple_to_py_object_and_back!((1i,2i,3i,4i,5i), (int,int,int,int,int), to_and_from_tuple5)
   tuple_to_py_object_and_back!((1i,2i,3i,4i,5i,6i), (int,int,int,int,int,int), to_and_from_tuple6)
+
+  #[test]
+  fn to_and_from_list() {
+    let val = vec!(1i,2i,3i);
+    let py = PyState::new();
+    let py_object = try_or_fail!(val.to_py_object(&py));
+    let returned = try_or_fail!(py.from_py_object::<Vec<int>>(py_object));
+    assert_eq!(returned, val);
+  }
 
   #[test]
   fn mixed_convert() {
