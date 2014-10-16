@@ -53,9 +53,9 @@ impl PyState {
   /// Low level function to check for python inturpreter errors
   pub fn get_result_exception(&self) -> Result<(), PyError> {
     unsafe {
-      let ptype : *mut PyObjectRaw = ptr::mut_null();
-      let pvalue : *mut PyObjectRaw = ptr::mut_null();
-      let ptraceback : *mut PyObjectRaw = ptr::mut_null();
+      let ptype : *mut PyObjectRaw = ptr::null_mut();
+      let pvalue : *mut PyObjectRaw = ptr::null_mut();
+      let ptraceback : *mut PyObjectRaw = ptr::null_mut();
       self.PyErr_Fetch(transmute(&ptype),
                        transmute(&pvalue),
                        transmute(&ptraceback));
