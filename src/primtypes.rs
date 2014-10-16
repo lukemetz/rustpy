@@ -180,13 +180,6 @@ impl<'b> ToPyType for &'b str {
   }
 }
 
-impl<'b> FromPyType for &'b str {
-  #[allow(unused_variable)]
-  fn from_py_object(state : &PyState, py_object : PyObject) -> Result<&'b str, PyError>  {
-    unimplemented!();
-  }
-}
-
 /// Structure that represents an empty tuple in python
 pub struct NoArgs;
 
