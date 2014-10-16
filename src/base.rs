@@ -172,6 +172,27 @@ impl<'a> PyObject<'a> {
       })
     })
   }
+
+  fn get_iter<'a>(&'a self) -> Result<PyObject<'a>, PyError> {
+    unsafe {
+      let py_iter = self.state.PyObject_GetIter(self.raw);
+      if py_iter.is_null() {
+        Err(NullPyObject)
+      } else {
+        Ok(PyObject::new(self.state, py_iter))
+      }
+    }
+  }
+
+  /// Get a Rust iterator wrapping a Python iterator.
+  ///
+  /// Returns an error if this object does not implement the Python
+  /// iterator protocol.
+  pub fn iter<'a, T : FromPyType>(&'a self) -> Result<PyIterator<'a, T>, PyError> {
+    self.get_iter().and_then(|py_object|
+      PyIterator::new(py_object)
+    )
+  }
 }
 
 #[unsafe_destructor]
@@ -216,6 +237,7 @@ pub enum PyError {
   StringConversionError,
   PyException(String),
   NullPyObject,
+  NotAnIterator,
 }
 
 /// Rust type that can be converted to a Python object
@@ -226,6 +248,42 @@ pub trait ToPyType {
 /// Rust type that can be extracted from a Python object
 pub trait FromPyType {
   fn from_py_object<'a>(state : &'a PyState, py_object : PyObject<'a>) -> Result<Self, PyError>;
+}
+
+/// Wrapper around a Python iterator
+pub struct PyIterator<'a, T> { py_object : PyObject<'a> }
+
+impl<'a, T : FromPyType> PyIterator<'a, T> {
+  /// Create Rust iterator from a Python object implementing the
+  /// iterator protocol.
+  pub fn new(obj : PyObject<'a>) -> Result<PyIterator<'a, T>, PyError> {
+    unsafe {
+      if obj.state.PyIter_Check(obj.raw) != 0 {
+        Ok(PyIterator { py_object : obj })
+      } else {
+        Err(NotAnIterator)
+      }
+    }
+  }
+
+  fn next_py_object(&mut self) -> Option<PyObject<'a>> {
+    unsafe {
+      let py_next = self.py_object.state.PyIter_Next(self.py_object.raw);
+      if py_next.is_null() {
+        None
+      } else {
+        Some(PyObject::new(self.py_object.state, py_next))
+      }
+    }
+  }
+}
+
+impl<'a, T : FromPyType> Iterator<Result<T, PyError>> for PyIterator<'a, T> {
+  fn next(&mut self) -> Option<Result<T, PyError>> {
+    self.next_py_object().and_then(|py_object|
+      Some(self.py_object.state.from_py_object(py_object))
+    )
+  }
 }
 
 #[cfg(test)]
@@ -352,5 +410,32 @@ mod test {
   fn test_py_object_show() {
     let py = PyState::new();
     assert_eq!(format!("{}", (1i, 2f32).to_py_object(&py).unwrap()), "PyObject{(1, 2.0)}".to_string());
+  }
+
+  #[test]
+  fn iterate_list() {
+    let val = vec!(1i,2,3);
+    let py = PyState::new();
+    let py_object = try_or_fail!(val.to_py_object(&py));
+    let returned = try_or_fail!(py_object.iter()).map(|x| x.unwrap()).collect::<Vec<int>>();
+    assert_eq!(returned, val);
+  }
+
+  #[test]
+  fn iterate_combinations() {
+    let py = PyState::new();
+    let itertools = try_or_fail!(py.get_module("itertools"));
+    let comb = try_or_fail!(itertools.call_func("combinations", (vec![1i,2,3,4], 2i)));
+    let result = try_or_fail!(comb.iter()).map(|x| x.unwrap()).collect::<Vec<(int, int)>>();
+    assert_eq!(vec![(1i,2),(1,3),(1,4),(2,3),(2,4),(3,4)], result);
+  }
+
+  #[test]
+  fn iterate_count() {
+    let py = PyState::new();
+    let itertools = try_or_fail!(py.get_module("itertools"));
+    let perm = try_or_fail!(itertools.call_func("combinations", (vec![1i,2,3,4], 2i)));
+    let count = try_or_fail!(perm.iter::<(int, int)>()).count();
+    assert_eq!(6, count);
   }
 }

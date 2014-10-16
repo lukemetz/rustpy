@@ -19,6 +19,7 @@ extern {
   fn PyObject_CallObject(callable_object : *mut PyObjectRaw, args :*mut PyObjectRaw) -> *mut PyObjectRaw;
   fn PyObject_GetAttrString(object : *mut PyObjectRaw, attr : *const c_char) -> *mut PyObjectRaw;
   fn PyObject_Str(obj: *mut PyObjectRaw) -> *mut PyObjectRaw;
+  fn PyObject_GetIter(obj : *mut PyObjectRaw) -> *mut PyObjectRaw;
 
   fn PyInt_FromLong(ival : c_long) -> *mut PyObjectRaw;
   fn PyInt_AsLong(obj : *mut PyObjectRaw) -> c_long;
@@ -43,6 +44,8 @@ extern {
 
   fn PyErr_Fetch(ptype : *mut *mut PyObjectRaw, pvalue : *mut *mut PyObjectRaw, ptraceback : *mut *mut PyObjectRaw);
   fn PyErr_NormalizeException(ptype : *mut *mut PyObjectRaw, pvalue : *mut *mut PyObjectRaw, ptraceback : *mut *mut PyObjectRaw);
+
+  fn PyIter_Next(obj : *mut PyObjectRaw) -> *mut PyObjectRaw;
 }
 
 #[link(name = "python2.7")]
@@ -54,6 +57,7 @@ extern {
   fn RPyList_Check(obj : *mut PyObjectRaw) -> c_long;
   fn RPyInt_Check(obj : *mut PyObjectRaw) -> c_long;
   fn RPyString_Check(obj : *mut PyObjectRaw) -> c_long;
+  fn RPyIter_Check(obj : *mut PyObjectRaw) -> c_long;
 }
 
 /// Trait to allow interaction with the python interpreter.
@@ -128,6 +132,9 @@ pub trait PythonCAPI {
   unsafe fn PyString_Check(&self, obj : *mut PyObjectRaw) -> c_long {
     RPyString_Check(obj)
   }
+  unsafe fn PyIter_Check(&self, obj : *mut PyObjectRaw) -> c_long {
+    RPyIter_Check(obj)
+  }
   unsafe fn PyString_FromString(&self, string : *const c_char) -> *mut PyObjectRaw{
     PyString_FromString(string)
   }
@@ -148,6 +155,12 @@ pub trait PythonCAPI {
   }
   unsafe fn PyObject_CallObject(&self, callable_object : *mut PyObjectRaw, args :*mut PyObjectRaw) -> *mut PyObjectRaw {
     PyObject_CallObject(callable_object, args)
+  }
+  unsafe fn PyObject_GetIter(&self, obj : *mut PyObjectRaw) -> *mut PyObjectRaw {
+    PyObject_GetIter(obj)
+  }
+  unsafe fn PyIter_Next(&self, obj : *mut PyObjectRaw) -> *mut PyObjectRaw {
+    PyIter_Next(obj)
   }
 }
 

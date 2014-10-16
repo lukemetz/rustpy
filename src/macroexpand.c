@@ -23,3 +23,7 @@ int RPyInt_Check(PyObject* obj) {
 int RPyString_Check(PyObject* obj) {
   return PyString_Check(obj);
 }
+
+int RPyIter_Check(PyObject* obj) {
+  return PyIter_Check(obj);
+}

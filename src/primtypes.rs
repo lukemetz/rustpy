@@ -1,6 +1,6 @@
 use libc::{c_long, size_t};
 use std::c_str::CString;
-pub use base::{PyObject, ToPyType, FromPyType, PyState};
+pub use base::{PyObject, ToPyType, FromPyType, PyState, PyIterator};
 pub use ffi::{PythonCAPI, PyObjectRaw};
 pub use base::{PyError,
            FromTypeConversionError,

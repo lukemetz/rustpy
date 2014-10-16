@@ -38,7 +38,7 @@ extern crate sync;
 extern crate debug;
 extern crate alloc;
 
-pub use base::{ToPyType, FromPyType, PyState, PyObject, PyObjectRaw, PyError};
+pub use base::{ToPyType, FromPyType, PyState, PyObject, PyObjectRaw, PyError, PyIterator};
 pub use primtypes::NoArgs;
 
 mod base;
