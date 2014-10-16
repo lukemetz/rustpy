@@ -1,6 +1,6 @@
 use libc::{c_long, size_t};
 use std::c_str::CString;
-pub use base::{PyObject, PyType, PyState};
+pub use base::{PyObject, ToPyType, FromPyType, PyState};
 pub use ffi::{PythonCAPI, PyObjectRaw};
 pub use base::{PyError,
            FromTypeConversionError,
@@ -9,7 +9,7 @@ pub use base::{PyError,
 
 macro_rules! prim_pytype (
   ($base_type:ty, $cast_type:ty, $to:ident, $back:ident, $check:ident) => (
-    impl PyType for $base_type {
+    impl ToPyType for $base_type {
       fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
         unsafe {
           let raw = state.$to(*self as $cast_type);
@@ -20,7 +20,9 @@ macro_rules! prim_pytype (
           }
         }
       }
+    }
 
+    impl FromPyType for $base_type {
       fn from_py_object(state : &PyState, py_object : PyObject) -> Result<$base_type, PyError>  {
         unsafe {
           if py_object.raw.is_not_null() && state.$check(py_object.raw) > 0 {
@@ -45,7 +47,7 @@ prim_pytype!(u32, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check)
 prim_pytype!(u64, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check)
 
 macro_rules! tuple_pytype ({$length:expr,$(($refN:ident, $n:expr, $T:ident)),+} => (
-  impl<$($T:PyType),+> PyType for ($($T,)+) {
+  impl<$($T:ToPyType),+> ToPyType for ($($T,)+) {
     fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
       $(let $refN = self.$refN();)+
       unsafe {
@@ -61,7 +63,9 @@ macro_rules! tuple_pytype ({$length:expr,$(($refN:ident, $n:expr, $T:ident)),+} 
         }
       }
     }
+  }
 
+  impl<$($T:FromPyType),+> FromPyType for ($($T,)+) {
     fn from_py_object(state : &PyState, py_object : PyObject) -> Result<($($T,)+), PyError>  {
       unsafe {
         if py_object.raw.is_null() && state.PyTuple_Check(py_object.raw) > 0 {
@@ -88,7 +92,7 @@ macro_rules! tuple_pytype ({$length:expr,$(($refN:ident, $n:expr, $T:ident)),+} 
   }
 ))
 
-impl<T: PyType> PyType for Vec<T> {
+impl<T: ToPyType> ToPyType for Vec<T> {
   fn to_py_object<'a>(&'a self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
     unsafe {
       let raw = state.PyList_New(self.len() as size_t);
@@ -104,7 +108,9 @@ impl<T: PyType> PyType for Vec<T> {
       }
     }
   }
+}
 
+impl<T: FromPyType> FromPyType for Vec<T> {
   fn from_py_object(state : &PyState, py_object : PyObject) -> Result<Vec<T>, PyError> {
     unsafe {
       if py_object.raw.is_not_null() && state.PyList_Check(py_object.raw) > 0 {
@@ -141,11 +147,13 @@ tuple_pytype!(8, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C), (ref3, 3, D),
 tuple_pytype!(9, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C), (ref3, 3, D),
   (ref4, 4, E), (ref5, 5, F),(ref6, 6, G),(ref7, 7, H),(ref8, 8, I))
 
-impl PyType for String {
+impl ToPyType for String {
   fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
     self.as_slice().to_py_object(state)
   }
+}
 
+impl FromPyType for String {
   fn from_py_object(state : &PyState, py_object : PyObject) -> Result<String, PyError>  {
     unsafe {
       if py_object.raw.is_not_null() && state.PyString_Check(py_object.raw) > 0 {
@@ -159,7 +167,7 @@ impl PyType for String {
   }
 }
 
-impl<'b> PyType for &'b str {
+impl<'b> ToPyType for &'b str {
   fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
     unsafe {
       let raw = state.PyString_FromString(self.to_c_str().unwrap());
@@ -170,21 +178,18 @@ impl<'b> PyType for &'b str {
       }
     }
   }
-
-  #[allow(unused_variable)]
-  fn from_py_object(state : &PyState, py_object : PyObject) -> Result<&'b str, PyError>  {
-    unimplemented!();
-  }
 }
 
 /// Structure that represents an empty tuple in python
 pub struct NoArgs;
 
-impl PyType for NoArgs {
+impl ToPyType for NoArgs {
   fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
     Ok(PyObject::empty_tuple(state))
   }
+}
 
+impl FromPyType for NoArgs {
   #[allow(unused_variable)]
   fn from_py_object(state : &PyState, py_object : PyObject) -> Result<NoArgs, PyError>  {
     Ok(NoArgs)
@@ -194,7 +199,7 @@ impl PyType for NoArgs {
 #[cfg(test)]
 mod test {
   use base::PyState;
-  use super::{PyType, NoArgs};
+  use super::{ToPyType, FromPyType, NoArgs};
   macro_rules! try_or_fail (
       ($e:expr) => (match $e { Ok(e) => e, Err(e) => fail!("{}", e) })
   )
