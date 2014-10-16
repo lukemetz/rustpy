@@ -16,7 +16,7 @@ doc/rustpy/index.html. Pull requests are welcome!
 
 ```rust
 extern crate rustpy;
-use rustpy::{PyType, PyState};
+use rustpy::{ToPyType, FromPyType, PyState};
 
 fn main() {
   let py = PyState::new();
