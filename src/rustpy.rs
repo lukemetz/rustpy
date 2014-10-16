@@ -8,8 +8,8 @@ Originally it was intended to bootstrap machine learning for rust.
 
 It provides a way to interact
 with a python interpreter, via [`PyState`](struct.PyState.html) as well as quick conversion
-from rust types to python types via the [`ToPyType`](trait.ToPyType) and
-[trait.FromPyType](trait.FromPyType) traits.
+from rust types to python types via the [`ToPyType`](trait.ToPyType.html) and
+[`FromPyType`](trait.FromPyType.html) traits.
 
 
 ```rust

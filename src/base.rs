@@ -218,11 +218,12 @@ pub enum PyError {
   NullPyObject,
 }
 
-/// Trait to convert objects to and from python
+/// Rust type that can be converted to a Python object
 pub trait ToPyType {
   fn to_py_object<'a>(&'a self, state : &'a PyState) -> Result<PyObject<'a>, PyError>;
 }
 
+/// Rust type that can be extracted from a Python object
 pub trait FromPyType {
   fn from_py_object<'a>(state : &'a PyState, py_object : PyObject<'a>) -> Result<Self, PyError>;
 }
