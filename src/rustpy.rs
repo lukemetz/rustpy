@@ -8,12 +8,13 @@ Originally it was intended to bootstrap machine learning for rust.
 
 It provides a way to interact
 with a python interpreter, via [`PyState`](struct.PyState.html) as well as quick conversion
-from rust types to python types via the [`PyType`](trait.PyType) trait.
+from rust types to python types via the [`ToPyType`](trait.ToPyType) and
+[trait.FromPyType](trait.FromPyType) traits.
 
 
 ```rust
 extern crate rustpy;
-use rustpy::{PyType, PyState};
+use rustpy::{ToPyType, FromPyType, PyState};
 
 
 fn main() {
@@ -37,7 +38,7 @@ extern crate sync;
 extern crate debug;
 extern crate alloc;
 
-pub use base::{PyType, PyState, PyObject, PyObjectRaw, PyError};
+pub use base::{ToPyType, FromPyType, PyState, PyObject, PyObjectRaw, PyError};
 pub use primtypes::NoArgs;
 
 mod base;

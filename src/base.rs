@@ -46,8 +46,8 @@ impl PyState {
   }
 
   /// Helper function to convert `PyObject` back to rust types.
-  pub fn from_py_object<A : PyType>(&self, obj : PyObject) -> Result<A, PyError> {
-    PyType::from_py_object(self, obj)
+  pub fn from_py_object<A : FromPyType>(&self, obj : PyObject) -> Result<A, PyError> {
+    FromPyType::from_py_object(self, obj)
   }
 
   /// Low level function to check for python inturpreter errors
@@ -129,7 +129,7 @@ impl<'a> PyObject<'a> {
   }
 
   /// Get member variable as native type
-  pub fn get_member<T : PyType>(&self, name: &str) -> Result<T, PyError> {
+  pub fn get_member<T : FromPyType>(&self, name: &str) -> Result<T, PyError> {
     self.get_member_obj(name).and_then(|x| {
       self.state.from_py_object(x)
     })
@@ -151,13 +151,13 @@ impl<'a> PyObject<'a> {
   }
 
   /// Helper function to call returning type
-  pub fn call_with_ret<'a, T : PyType>(&'a self, args: &PyObject) -> Result<T, PyError> {
+  pub fn call_with_ret<'a, T : FromPyType>(&'a self, args: &PyObject) -> Result<T, PyError> {
     self.call(args).and_then(|x| {
       self.state.from_py_object::<T>(x)
     })
   }
 
-  pub fn call_func<'a, I : PyType>(&'a self, name : &str, args : I) -> Result<PyObject<'a>, PyError> {
+  pub fn call_func<'a, I : ToPyType>(&'a self, name : &str, args : I) -> Result<PyObject<'a>, PyError> {
     self.get_func(name).and_then(|x| {
       args.to_py_object(self.state).and_then(|input| {
           x.call(&input)
@@ -165,7 +165,7 @@ impl<'a> PyObject<'a> {
     })
   }
 
-  pub fn call_func_with_ret<'a, I : PyType, R : PyType>(&'a self, name : &str, args : I) -> Result<R, PyError> {
+  pub fn call_func_with_ret<'a, I : ToPyType, R : FromPyType>(&'a self, name : &str, args : I) -> Result<R, PyError> {
     self.get_func(name).and_then(|x| {
       args.to_py_object(self.state).and_then(|input| {
           x.call_with_ret(&input)
@@ -219,15 +219,18 @@ pub enum PyError {
 }
 
 /// Trait to convert objects to and from python
-pub trait PyType {
+pub trait ToPyType {
   fn to_py_object<'a>(&'a self, state : &'a PyState) -> Result<PyObject<'a>, PyError>;
+}
+
+pub trait FromPyType {
   fn from_py_object<'a>(state : &'a PyState, py_object : PyObject<'a>) -> Result<Self, PyError>;
 }
 
 #[cfg(test)]
 mod test {
   use super::PyState;
-  use primtypes::{PyType, PyObject};
+  use primtypes::{ToPyType, FromPyType, PyObject};
   use super::PyException;
   macro_rules! try_or_fail (
       ($e:expr) => (match $e { Ok(e) => e, Err(e) => fail!("{}", e) })
