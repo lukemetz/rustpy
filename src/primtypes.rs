@@ -261,7 +261,7 @@ mod test {
     let result = py.from_py_object::<int>(py_object);
     match result {
       Err(_) => (),
-      Ok(x) => fail!("should have failed but got {:?}", x)
+      Ok(x) => fail!("should have failed but got {}", x)
     };
   }
 
@@ -273,7 +273,7 @@ mod test {
     let result = py.from_py_object::<(int,int)>(py_object);
     match result {
       Err(_) => (),
-      Ok(x) => fail!("should have failed but got {:?}", x)
+      Ok(x) => fail!("should have failed but got {}", x)
     };
   }
 
@@ -285,7 +285,7 @@ mod test {
     let result = py.from_py_object::<f32>(py_object);
     match result {
       Err(_) => (),
-      Ok(x) => fail!("should have failed but got {:?}", x)
+      Ok(x) => fail!("should have failed but got {}", x)
     };
   }
 

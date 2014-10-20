@@ -35,7 +35,6 @@ fn main() {
 
 extern crate libc;
 extern crate sync;
-extern crate debug;
 extern crate alloc;
 
 pub use base::{ToPyType, FromPyType, PyState, PyObject, PyObjectRaw, PyError, PyIterator};

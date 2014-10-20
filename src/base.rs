@@ -340,7 +340,7 @@ mod test {
     match module {
       Ok(_) => fail!("Did not return Err"),
       Err(PyException(s)) => assert_eq!(s.as_slice(), "ImportError : No module named mathSpelledWrong"),
-      Err(e) => fail!("Got unexpected error: {:?}", e)
+      Err(e) => fail!("Got unexpected error: {}", e)
     };
   }
 
@@ -352,7 +352,7 @@ mod test {
     match func {
       Ok(_) => fail!("Did not return Err"),
       Err(PyException(s)) => assert_eq!(s.as_slice(), "AttributeError : 'module' object has no attribute 'powMissSpelled'"),
-      Err(e) => fail!("Got unexpected error: {:?}", e)
+      Err(e) => fail!("Got unexpected error: {}", e)
     };
   }
 
@@ -366,7 +366,7 @@ mod test {
     match res {
       Ok(_) => fail!("Did not return Err"),
       Err(PyException(s)) => assert_eq!(s.as_slice(), "TypeError : pow expected 2 arguments, got 3"),
-      Err(e) => fail!("Got unexpected error: {:?}", e)
+      Err(e) => fail!("Got unexpected error: {}", e)
     };
   }
 
