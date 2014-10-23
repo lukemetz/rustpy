@@ -148,8 +148,16 @@ tuple_pytype!(9, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C), (ref3, 3, D),
   (ref4, 4, E), (ref5, 5, F),(ref6, 6, G),(ref7, 7, H),(ref8, 8, I))
 
 impl ToPyType for String {
-  fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
-    self.as_slice().to_py_object(state)
+  fn to_py_object<'a, 'b>(&'b self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
+    // FIXME code duplicated from str slice
+    unsafe {
+      let raw = state.PyString_FromString(self.to_c_str().unwrap());
+      if raw.is_not_null() && state.PyString_Check(raw) > 0 {
+        Ok(PyObject::new(state, raw))
+      } else {
+        Err(ToTypeConversionError)
+      }
+    }
   }
 }
 
@@ -231,7 +239,8 @@ mod test {
     #[test]
     fn $func_name() {
       let py = PyState::new();
-      let py_object = try_or_fail!($val.to_py_object(&py));
+      let v = $val;
+      let py_object = try_or_fail!(v.to_py_object(&py));
       let returned = try_or_fail!(py.from_py_object::<$T>(py_object));
       assert_eq!(returned, $val);
     }
