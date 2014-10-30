@@ -208,7 +208,7 @@ impl FromPyType for NoArgs {
 mod test {
   use base::PyState;
   use super::{ToPyType, FromPyType, NoArgs};
-  macro_rules! try_or_fail (
+  macro_rules! try_or_panic (
       ($e:expr) => (match $e { Ok(e) => e, Err(e) => panic!("{}", e) })
   )
 

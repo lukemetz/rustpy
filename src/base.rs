@@ -291,7 +291,7 @@ mod test {
   use super::PyState;
   use primtypes::{ToPyType, FromPyType, PyObject};
   use super::PyException;
-  macro_rules! try_or_fail (
+  macro_rules! try_or_panic (
       ($e:expr) => (match $e { Ok(e) => e, Err(e) => panic!("{}", e) })
   )
 
