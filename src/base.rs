@@ -291,8 +291,8 @@ mod test {
   use super::PyState;
   use primtypes::{ToPyType, FromPyType, PyObject};
   use super::PyException;
-  macro_rules! try_or_fail (
-      ($e:expr) => (match $e { Ok(e) => e, Err(e) => fail!("{}", e) })
+  macro_rules! try_or_panic (
+      ($e:expr) => (match $e { Ok(e) => e, Err(e) => panic!("{}", e) })
   )
 
   #[test]
@@ -306,7 +306,7 @@ mod test {
     let py = PyState::new();
     let pyobj = py.get_module("math");
     match pyobj {
-      Err(_) => fail!("Failed to import math"),
+      Err(_) => panic!("Failed to import math"),
       Ok(x) => assert!(x.raw.is_not_null())
     }
   }
@@ -314,24 +314,24 @@ mod test {
   #[test]
   fn math_sqrt() {
     let py = PyState::new();
-    let module = try_or_fail!(py.get_module("math"));
-    let func = try_or_fail!(module.get_func("sqrt"));
+    let module = try_or_panic!(py.get_module("math"));
+    let func = try_or_panic!(module.get_func("sqrt"));
     let input = (144f32,);
-    let arg = try_or_fail!(input.to_py_object(&py));
-    let py_result = try_or_fail!(func.call(&arg));
-    let result = try_or_fail!(py.from_py_object::<f32>(py_result));
+    let arg = try_or_panic!(input.to_py_object(&py));
+    let py_result = try_or_panic!(func.call(&arg));
+    let result = try_or_panic!(py.from_py_object::<f32>(py_result));
     assert_eq!(result, 12f32);
   }
 
   #[test]
   fn math_pow() {
     let py = PyState::new();
-    let module = try_or_fail!(py.get_module("math"));
-    let func = try_or_fail!(module.get_func("pow"));
+    let module = try_or_panic!(py.get_module("math"));
+    let func = try_or_panic!(module.get_func("pow"));
     let input = (3f32, 2f32);
-    let arg = try_or_fail!(input.to_py_object(&py));
-    let py_result = try_or_fail!(func.call(&arg));
-    let result = try_or_fail!(py.from_py_object::<f32>(py_result));
+    let arg = try_or_panic!(input.to_py_object(&py));
+    let py_result = try_or_panic!(func.call(&arg));
+    let result = try_or_panic!(py.from_py_object::<f32>(py_result));
     assert_eq!(result, 9f32);
   }
 
@@ -340,56 +340,56 @@ mod test {
     let py = PyState::new();
     let module = py.get_module("mathSpelledWrong");
     match module {
-      Ok(_) => fail!("Did not return Err"),
+      Ok(_) => panic!("Did not return Err"),
       Err(PyException(s)) => assert_eq!(s.as_slice(), "ImportError : No module named mathSpelledWrong"),
-      Err(e) => fail!("Got unexpected error: {}", e)
+      Err(e) => panic!("Got unexpected error: {}", e)
     };
   }
 
   #[test]
   fn test_exceptions_function_lookup() {
     let py = PyState::new();
-    let module = try_or_fail!(py.get_module("math"));
+    let module = try_or_panic!(py.get_module("math"));
     let func = module.get_func("powMissSpelled");
     match func {
-      Ok(_) => fail!("Did not return Err"),
+      Ok(_) => panic!("Did not return Err"),
       Err(PyException(s)) => assert_eq!(s.as_slice(), "AttributeError : 'module' object has no attribute 'powMissSpelled'"),
-      Err(e) => fail!("Got unexpected error: {}", e)
+      Err(e) => panic!("Got unexpected error: {}", e)
     };
   }
 
   #[test]
   fn test_exceptions_function_call() {
     let py = PyState::new();
-    let module = try_or_fail!(py.get_module("math"));
-    let func = try_or_fail!(module.get_func("pow"));
+    let module = try_or_panic!(py.get_module("math"));
+    let func = try_or_panic!(module.get_func("pow"));
     let input = (3f32, 2f32, 314i);
-    let badarg = try_or_fail!(input.to_py_object(&py));
+    let badarg = try_or_panic!(input.to_py_object(&py));
     let res = func.call(&badarg);
     match res {
-      Ok(_) => fail!("Did not return Err"),
+      Ok(_) => panic!("Did not return Err"),
       Err(PyException(s)) => assert_eq!(s.as_slice(), "TypeError : pow expected 2 arguments, got 3"),
-      Err(e) => fail!("Got unexpected error: {}", e)
+      Err(e) => panic!("Got unexpected error: {}", e)
     };
   }
 
   #[test]
   fn test_call_with_ret() {
     let py = PyState::new();
-    let module = try_or_fail!(py.get_module("math"));
-    let func = try_or_fail!(module.get_func("pow"));
+    let module = try_or_panic!(py.get_module("math"));
+    let func = try_or_panic!(module.get_func("pow"));
     let input = (3f32, 2f32);
-    let arg = try_or_fail!(input.to_py_object(&py));
-    let result = try_or_fail!(func.call_with_ret::<f32>(&arg));
+    let arg = try_or_panic!(input.to_py_object(&py));
+    let result = try_or_panic!(func.call_with_ret::<f32>(&arg));
     assert_eq!(result, 9f32);
   }
 
   #[test]
   fn test_call_func() {
     let py = PyState::new();
-    let module = try_or_fail!(py.get_module("math"));
-    let obj = try_or_fail!(module.call_func("pow", (3f32, 2f32)));
-    let result = try_or_fail!(py.from_py_object::<f32>(obj));
+    let module = try_or_panic!(py.get_module("math"));
+    let obj = try_or_panic!(module.call_func("pow", (3f32, 2f32)));
+    let result = try_or_panic!(py.from_py_object::<f32>(obj));
 
     assert_eq!(result, 9f32);
   }
@@ -397,16 +397,16 @@ mod test {
   #[test]
   fn test_call_func_with_ret() {
     let py = PyState::new();
-    let module = try_or_fail!(py.get_module("math"));
-    let result : f32 = try_or_fail!(module.call_func_with_ret("pow", (3f32, 2f32)));
+    let module = try_or_panic!(py.get_module("math"));
+    let result : f32 = try_or_panic!(module.call_func_with_ret("pow", (3f32, 2f32)));
     assert_eq!(result, 9f32);
   }
 
   #[test]
   fn test_get_member() {
     let py = PyState::new();
-    let module = try_or_fail!(py.get_module("math"));
-    let result : f32 = try_or_fail!(module.get_member("pi"));
+    let module = try_or_panic!(py.get_module("math"));
+    let result : f32 = try_or_panic!(module.get_member("pi"));
     assert!(result - 3.141593 < 0.001);
   }
 
@@ -420,26 +420,26 @@ mod test {
   fn iterate_list() {
     let val = vec!(1i,2,3);
     let py = PyState::new();
-    let py_object = try_or_fail!(val.to_py_object(&py));
-    let returned = try_or_fail!(py_object.iter()).map(|x| x.unwrap()).collect::<Vec<int>>();
+    let py_object = try_or_panic!(val.to_py_object(&py));
+    let returned = try_or_panic!(py_object.iter()).map(|x| x.unwrap()).collect::<Vec<int>>();
     assert_eq!(returned, val);
   }
 
   #[test]
   fn iterate_combinations() {
     let py = PyState::new();
-    let itertools = try_or_fail!(py.get_module("itertools"));
-    let comb = try_or_fail!(itertools.call_func("combinations", (vec![1i,2,3,4], 2i)));
-    let result = try_or_fail!(comb.iter()).map(|x| x.unwrap()).collect::<Vec<(int, int)>>();
+    let itertools = try_or_panic!(py.get_module("itertools"));
+    let comb = try_or_panic!(itertools.call_func("combinations", (vec![1i,2,3,4], 2i)));
+    let result = try_or_panic!(comb.iter()).map(|x| x.unwrap()).collect::<Vec<(int, int)>>();
     assert_eq!(vec![(1i,2),(1,3),(1,4),(2,3),(2,4),(3,4)], result);
   }
 
   #[test]
   fn iterate_count() {
     let py = PyState::new();
-    let itertools = try_or_fail!(py.get_module("itertools"));
-    let perm = try_or_fail!(itertools.call_func("combinations", (vec![1i,2,3,4], 2i)));
-    let count = try_or_fail!(perm.iter::<(int, int)>()).count();
+    let itertools = try_or_panic!(py.get_module("itertools"));
+    let perm = try_or_panic!(itertools.call_func("combinations", (vec![1i,2,3,4], 2i)));
+    let count = try_or_panic!(perm.iter::<(int, int)>()).count();
     assert_eq!(6, count);
   }
 }

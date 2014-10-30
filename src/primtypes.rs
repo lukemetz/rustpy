@@ -208,8 +208,8 @@ impl FromPyType for NoArgs {
 mod test {
   use base::PyState;
   use super::{ToPyType, FromPyType, NoArgs};
-  macro_rules! try_or_fail (
-      ($e:expr) => (match $e { Ok(e) => e, Err(e) => fail!("{}", e) })
+  macro_rules! try_or_panic (
+      ($e:expr) => (match $e { Ok(e) => e, Err(e) => panic!("{}", e) })
   )
 
   macro_rules! num_to_py_object_and_back (
@@ -218,8 +218,8 @@ mod test {
       fn $func_name() {
         let py = PyState::new();
         let value = 123i as $t;
-        let py_object = try_or_fail!(value.to_py_object(&py));
-        let returned = try_or_fail!(py.from_py_object::<$t>(py_object));
+        let py_object = try_or_panic!(value.to_py_object(&py));
+        let returned = try_or_panic!(py.from_py_object::<$t>(py_object));
         assert_eq!(returned, 123i as $t);
       }
     )
@@ -240,8 +240,8 @@ mod test {
     fn $func_name() {
       let py = PyState::new();
       let v = $val;
-      let py_object = try_or_fail!(v.to_py_object(&py));
-      let returned = try_or_fail!(py.from_py_object::<$T>(py_object));
+      let py_object = try_or_panic!(v.to_py_object(&py));
+      let returned = try_or_panic!(py.from_py_object::<$T>(py_object));
       assert_eq!(returned, $val);
     }
   ))
@@ -257,8 +257,8 @@ mod test {
   fn to_and_from_list() {
     let val = vec!(1i,2i,3i);
     let py = PyState::new();
-    let py_object = try_or_fail!(val.to_py_object(&py));
-    let returned = try_or_fail!(py.from_py_object::<Vec<int>>(py_object));
+    let py_object = try_or_panic!(val.to_py_object(&py));
+    let returned = try_or_panic!(py.from_py_object::<Vec<int>>(py_object));
     assert_eq!(returned, val);
   }
 
@@ -266,11 +266,11 @@ mod test {
   fn mixed_convert() {
     let py = PyState::new();
     let value = 123f32;
-    let py_object = try_or_fail!(value.to_py_object(&py));
+    let py_object = try_or_panic!(value.to_py_object(&py));
     let result = py.from_py_object::<int>(py_object);
     match result {
       Err(_) => (),
-      Ok(x) => fail!("should have failed but got {}", x)
+      Ok(x) => panic!("should have failed but got {}", x)
     };
   }
 
@@ -278,11 +278,11 @@ mod test {
   fn float_to_tuple_should_err() {
     let py = PyState::new();
     let value = 123f32;
-    let py_object = try_or_fail!(value.to_py_object(&py));
+    let py_object = try_or_panic!(value.to_py_object(&py));
     let result = py.from_py_object::<(int,int)>(py_object);
     match result {
       Err(_) => (),
-      Ok(x) => fail!("should have failed but got {}", x)
+      Ok(x) => panic!("should have failed but got {}", x)
     };
   }
 
@@ -290,11 +290,11 @@ mod test {
   fn tuple_to_float_should_err() {
     let py = PyState::new();
     let value = (123f32, 234f32, 1f32, 3f32);
-    let py_object = try_or_fail!(value.to_py_object(&py));
+    let py_object = try_or_panic!(value.to_py_object(&py));
     let result = py.from_py_object::<f32>(py_object);
     match result {
       Err(_) => (),
-      Ok(x) => fail!("should have failed but got {}", x)
+      Ok(x) => panic!("should have failed but got {}", x)
     };
   }
 
@@ -302,8 +302,8 @@ mod test {
   fn string_to_py_object_and_back() {
     let py = PyState::new();
     let value = String::from_str("Hello world");
-    let py_object = try_or_fail!(value.to_py_object(&py));
-    let result = try_or_fail!(py.from_py_object::<String>(py_object));
+    let py_object = try_or_panic!(value.to_py_object(&py));
+    let result = try_or_panic!(py.from_py_object::<String>(py_object));
     assert_eq!(result.as_slice(), "Hello world");
   }
 
@@ -311,8 +311,8 @@ mod test {
   fn ref_string_to_py_object_and_back_to_string() {
     let py = PyState::new();
     let value = "Hello world";
-    let py_object = try_or_fail!(value.to_py_object(&py));
-    let result = try_or_fail!(py.from_py_object::<String>(py_object));
+    let py_object = try_or_panic!(value.to_py_object(&py));
+    let result = try_or_panic!(py.from_py_object::<String>(py_object));
     assert_eq!(result.as_slice(), "Hello world");
   }
 
@@ -321,7 +321,7 @@ mod test {
     // Just Don't fail to convert. Assuming its correct
     let py = PyState::new();
     let value = NoArgs;
-    let py_object = try_or_fail!(value.to_py_object(&py));
-    let _ = try_or_fail!(py.from_py_object::<NoArgs>(py_object));
+    let py_object = try_or_panic!(value.to_py_object(&py));
+    let _ = try_or_panic!(py.from_py_object::<NoArgs>(py_object));
   }
 }
