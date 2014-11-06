@@ -198,8 +198,7 @@ impl ToPyType for NoArgs {
 }
 
 impl FromPyType for NoArgs {
-  #[allow(unused_variable)]
-  fn from_py_object(state : &PyState, py_object : PyObject) -> Result<NoArgs, PyError>  {
+  fn from_py_object(_ : &PyState, _ : PyObject) -> Result<NoArgs, PyError>  {
     Ok(NoArgs)
   }
 }
