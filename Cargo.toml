@@ -3,8 +3,7 @@
 name = "rustpy"
 version = "0.1.0"
 authors = [ "luke.s.metz@gmail.com" ]
-
-build = "make -C src/"
+build = "build.rs"
 
 [lib]
 name = "rustpy"
