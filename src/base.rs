@@ -40,7 +40,7 @@ impl PyState {
       } else if py_module.is_not_null() {
         Ok(PyObject::new(self, py_module))
       } else {
-        Err(NullPyObject)
+        Err(PyError::NullPyObject)
       }
     }
   }
@@ -70,7 +70,7 @@ impl PyState {
         let error_type = PyObject::new(self, error_type_string);
         let base_string = self.from_py_object::<String>(base).unwrap();
         let error_type_string = self.from_py_object::<String>(error_type).unwrap();
-        Err(PyException(error_type_string + " : ".to_string() + base_string))
+        Err(PyError::PyException(error_type_string + " : ".to_string() + base_string))
       }
     }
   }
@@ -121,7 +121,7 @@ impl<'a> PyObject<'a> {
       if exception.is_err() {
         Err(exception.err().unwrap())
       } else if py_member.is_null() {
-        Err(NullPyObject)
+        Err(PyError::NullPyObject)
       } else {
         Ok(PyObject::new(self.state, py_member))
       }
@@ -143,7 +143,7 @@ impl<'a> PyObject<'a> {
       if exception.is_err() {
         Err(exception.err().unwrap())
       } else if py_ret.is_null() {
-        Err(NullPyObject)
+        Err(PyError::NullPyObject)
       } else {
         Ok(PyObject::new(self.state, py_ret))
       }
@@ -177,7 +177,7 @@ impl<'a> PyObject<'a> {
     unsafe {
       let py_iter = self.state.PyObject_GetIter(self.raw);
       if py_iter.is_null() {
-        Err(NullPyObject)
+        Err(PyError::NullPyObject)
       } else {
         Ok(PyObject::new(self.state, py_iter))
       }
@@ -261,7 +261,7 @@ impl<'a, T : FromPyType> PyIterator<'a, T> {
       if obj.state.PyIter_Check(obj.raw) != 0 {
         Ok(PyIterator { py_object : obj })
       } else {
-        Err(NotAnIterator)
+        Err(PyError::NotAnIterator)
       }
     }
   }
@@ -290,7 +290,7 @@ impl<'a, T : FromPyType> Iterator<Result<T, PyError>> for PyIterator<'a, T> {
 mod test {
   use super::PyState;
   use primtypes::{ToPyType, FromPyType, PyObject};
-  use super::PyException;
+  use super::PyError;
   macro_rules! try_or_panic (
       ($e:expr) => (match $e { Ok(e) => e, Err(e) => panic!("{}", e) })
   )
@@ -341,7 +341,7 @@ mod test {
     let module = py.get_module("mathSpelledWrong");
     match module {
       Ok(_) => panic!("Did not return Err"),
-      Err(PyException(s)) => assert_eq!(s.as_slice(), "ImportError : No module named mathSpelledWrong"),
+      Err(PyError::PyException(s)) => assert_eq!(s.as_slice(), "ImportError : No module named mathSpelledWrong"),
       Err(e) => panic!("Got unexpected error: {}", e)
     };
   }
@@ -353,7 +353,7 @@ mod test {
     let func = module.get_func("powMissSpelled");
     match func {
       Ok(_) => panic!("Did not return Err"),
-      Err(PyException(s)) => assert_eq!(s.as_slice(), "AttributeError : 'module' object has no attribute 'powMissSpelled'"),
+      Err(PyError::PyException(s)) => assert_eq!(s.as_slice(), "AttributeError : 'module' object has no attribute 'powMissSpelled'"),
       Err(e) => panic!("Got unexpected error: {}", e)
     };
   }
@@ -368,7 +368,7 @@ mod test {
     let res = func.call(&badarg);
     match res {
       Ok(_) => panic!("Did not return Err"),
-      Err(PyException(s)) => assert_eq!(s.as_slice(), "TypeError : pow expected 2 arguments, got 3"),
+      Err(PyError::PyException(s)) => assert_eq!(s.as_slice(), "TypeError : pow expected 2 arguments, got 3"),
       Err(e) => panic!("Got unexpected error: {}", e)
     };
   }

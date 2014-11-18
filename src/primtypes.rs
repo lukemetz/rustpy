@@ -2,10 +2,7 @@ use libc::{c_long, size_t};
 use std::c_str::CString;
 pub use base::{PyObject, ToPyType, FromPyType, PyState, PyIterator};
 pub use ffi::{PythonCAPI, PyObjectRaw};
-pub use base::{PyError,
-           FromTypeConversionError,
-           ToTypeConversionError,
-           NullPyObject};
+pub use base::PyError;
 
 macro_rules! prim_pytype (
   ($base_type:ty, $cast_type:ty, $to:ident, $back:ident, $check:ident) => (
@@ -16,7 +13,7 @@ macro_rules! prim_pytype (
           if raw.is_not_null() && state.$check(raw) > 0 {
             Ok(PyObject::new(state, raw))
           } else {
-            Err(ToTypeConversionError)
+            Err(PyError::ToTypeConversionError)
           }
         }
       }
@@ -28,7 +25,7 @@ macro_rules! prim_pytype (
           if py_object.raw.is_not_null() && state.$check(py_object.raw) > 0 {
             Ok(state.$back(py_object.raw) as $base_type)
           } else {
-            Err(FromTypeConversionError)
+            Err(PyError::FromTypeConversionError)
           }
         }
       }
@@ -59,7 +56,7 @@ macro_rules! tuple_pytype ({$length:expr,$(($refN:ident, $n:expr, $T:ident)),+} 
         if raw.is_not_null() {
           Ok(PyObject::new(state, raw))
         } else {
-          Err(ToTypeConversionError)
+          Err(PyError::ToTypeConversionError)
         }
       }
     }
@@ -69,7 +66,7 @@ macro_rules! tuple_pytype ({$length:expr,$(($refN:ident, $n:expr, $T:ident)),+} 
     fn from_py_object(state : &PyState, py_object : PyObject) -> Result<($($T,)+), PyError>  {
       unsafe {
         if py_object.raw.is_null() && state.PyTuple_Check(py_object.raw) > 0 {
-          Err(FromTypeConversionError)
+          Err(PyError::FromTypeConversionError)
         } else {
           let raw = py_object.raw;
           if state.PyTuple_Size(raw) == $length {
@@ -81,10 +78,10 @@ macro_rules! tuple_pytype ({$length:expr,$(($refN:ident, $n:expr, $T:ident)),+} 
               $(let $refN = try!(state.from_py_object::<$T>($refN));)+
               Ok(($($refN,)+))
             } else {
-              Err(ToTypeConversionError)
+              Err(PyError::ToTypeConversionError)
             }
           } else {
-              Err(ToTypeConversionError)
+              Err(PyError::ToTypeConversionError)
           }
         }
       }
@@ -104,7 +101,7 @@ impl<T: ToPyType> ToPyType for Vec<T> {
       if raw.is_not_null() {
         Ok(PyObject::new(state, raw))
       } else {
-        Err(ToTypeConversionError)
+        Err(PyError::ToTypeConversionError)
       }
     }
   }
@@ -119,14 +116,14 @@ impl<T: FromPyType> FromPyType for Vec<T> {
         let mut v = Vec::with_capacity(size);
         for i in range(0, size) {
           let rawitem = state.PyList_GetItem(raw, i as size_t);
-          if rawitem.is_null() { return Err(FromTypeConversionError); }
+          if rawitem.is_null() { return Err(PyError::FromTypeConversionError); }
           let pyitem = PyObject::new(state, rawitem);
           let item = try!(state.from_py_object::<T>(pyitem));
           v.push(item);
         }
         Ok(v)
       } else {
-        Err(FromTypeConversionError)
+        Err(PyError::FromTypeConversionError)
       }
     }
   }
@@ -155,7 +152,7 @@ impl ToPyType for String {
       if raw.is_not_null() && state.PyString_Check(raw) > 0 {
         Ok(PyObject::new(state, raw))
       } else {
-        Err(ToTypeConversionError)
+        Err(PyError::ToTypeConversionError)
       }
     }
   }
@@ -169,7 +166,7 @@ impl FromPyType for String {
         let string = String::from_str(CString::new(c_str, false).as_str().unwrap());
         Ok(string)
       } else {
-        Err(FromTypeConversionError)
+        Err(PyError::FromTypeConversionError)
       }
     }
   }
@@ -182,7 +179,7 @@ impl<'b> ToPyType for &'b str {
       if raw.is_not_null() && state.PyString_Check(raw) > 0 {
         Ok(PyObject::new(state, raw))
       } else {
-        Err(ToTypeConversionError)
+        Err(PyError::ToTypeConversionError)
       }
     }
   }
