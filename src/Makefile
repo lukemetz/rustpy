@@ -1,6 +1,13 @@
 CC = gcc
-CFLAGS += `python2.7-config --cflags` -fPIC --static
 AR ?= ar
+
+OS := $(shell uname)
+
+ifeq ($(OS), Linux)
+CFLAGS += `python-config --cflags` -fPIC --static
+else
+CFLAGS += -IC:/Python27/include -LC:/Python27/libs -lpython27 -shared
+endif
 
 .PHONY: all
 all: libmacroexpand.a

@@ -1,0 +1,7 @@
+[package]
+
+name = "rustpy-test"
+version = "0.0.1"
+
+[dependencies.rustpy]
+git = "https://github.com/subterran3an/rustpy.git"
