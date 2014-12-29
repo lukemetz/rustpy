@@ -30,12 +30,12 @@ fn main() {
 ```
 */
 #![crate_type = "lib"]
+
 #![feature(macro_rules)]
 #![feature(link_args)]
 #![feature(unsafe_destructor)]
 
 extern crate libc;
-extern crate sync;
 extern crate alloc;
 
 pub use base::{ToPyType, FromPyType, PyState, PyObject, PyObjectRaw, PyError, PyIterator};
