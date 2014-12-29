@@ -1,4 +1,4 @@
-use sync::mutex::{StaticMutex, MUTEX_INIT, Guard};
+use std::sync::{StaticMutex, StaticMutexGuard, MUTEX_INIT};
 use std::ptr;
 use std::mem::transmute;
 use std::fmt;
@@ -13,7 +13,7 @@ static mut PY_MUTEX : StaticMutex = MUTEX_INIT;
 /// python at the cost of increased risk of deadlocks.
 pub struct PyState {
   #[allow(dead_code)]
-  guard : Guard<'static>
+  guard : StaticMutexGuard
 }
 
 impl PyState {
@@ -70,20 +70,9 @@ impl PyState {
         let error_type = PyObject::new(self, error_type_string);
         let base_string = self.from_py_object::<String>(base).unwrap();
         let error_type_string = self.from_py_object::<String>(error_type).unwrap();
-        Err(PyError::PyException(error_type_string + " : ".to_string() + base_string))
+        Err(PyError::PyException(error_type_string + " : " + base_string.as_slice()))
       }
     }
-  }
-}
-
-impl Drop for PyState {
-  fn drop(&mut self) {
-    // This is a bug. Numpy should properly clean up after itself but it doesnt.
-    // This will continue to allow for multiple PyState, but will probably
-    // cause memory leaks.
-    //unsafe {
-      //self.Py_Finalize();
-    //}
   }
 }
 
@@ -293,7 +282,7 @@ mod test {
   use super::PyError;
   macro_rules! try_or_panic (
       ($e:expr) => (match $e { Ok(e) => e, Err(e) => panic!("{}", e) })
-  )
+  );
 
   #[test]
   fn test_empty_tuple_should_not_fail() {
