@@ -1,23 +1,19 @@
 CC = gcc
 AR ?= ar
 
-PYTHON_INCLUDE_DIR = C:/Python27/include
-PYTHON_LIB_DIR = C:/Python27/libs
-
 OS := $(shell uname)
 
 ifeq ($(OS), Linux)
 CFLAGS += `python-config --cflags` -fPIC --static
 else
-CFLAGS += -I$(PYTHON_INCLUDE_DIR) -L$(PYTHON_LIB_DIR) -fPIC --static
-LDFLAGS += -lpython27
+CFLAGS += -IC:/Python27/include -LC:/Python27/libs -lpython27 -shared
 endif
 
 .PHONY: all
 all: libmacroexpand.a
 
 %.o: %.c
-	$(CC) $< -o $@ -c $(CFLAGS) $(LDFLAGS)
+	$(CC) $< -o $@ -c $(CFLAGS)
 
 libmacroexpand.a: macroexpand.o
 	$(AR) rcs ../libmacroexpand.a macroexpand.o
