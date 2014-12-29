@@ -10,7 +10,7 @@ ifeq ($(OS), Linux)
 CFLAGS += `python-config --cflags` -fPIC --static
 else
 CFLAGS += -I$(PYTHON_INCLUDE_DIR) -fPIC --static
-LDFLAGS += -I(PYTHON_LIB_DIR)
+LDFLAGS += -I$(PYTHON_LIB_DIR)
 endif
 
 .PHONY: all
