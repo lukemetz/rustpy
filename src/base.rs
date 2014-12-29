@@ -30,7 +30,7 @@ impl PyState {
   /// Return the PyObject at the associated name. Will `Err` if no module found.
   pub fn get_module<'a>(&'a self, module_name : &str) -> Result<PyObject<'a>, PyError> {
     unsafe {
-      let string = module_name.to_c_str().unwrap();
+      let string = module_name.to_c_str().into_inner();
       let py_module = self.PyImport_ImportModule(string);
 
       let exception = self.get_result_exception();
@@ -66,7 +66,7 @@ impl PyState {
         Ok(())
       } else {
         let base = PyObject::new(self, self.PyObject_Str(pvalue));
-        let error_type_string = self.PyObject_GetAttrString(ptype, "__name__".to_c_str().unwrap());
+        let error_type_string = self.PyObject_GetAttrString(ptype, "__name__".to_c_str().into_inner());
         let error_type = PyObject::new(self, error_type_string);
         let base_string = self.from_py_object::<String>(base).unwrap();
         let error_type_string = self.from_py_object::<String>(error_type).unwrap();
@@ -105,7 +105,7 @@ impl<'a> PyObject<'a> {
   /// Get a member variable as PyObject
   pub fn get_member_obj(&self, name: &str) -> Result<PyObject<'a>, PyError> {
     unsafe {
-      let py_member = self.state.PyObject_GetAttrString(self.raw, name.to_c_str().unwrap());
+      let py_member = self.state.PyObject_GetAttrString(self.raw, name.to_c_str().into_inner());
       let exception = self.state.get_result_exception();
       if exception.is_err() {
         Err(exception.err().unwrap())

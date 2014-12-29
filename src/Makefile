@@ -10,7 +10,7 @@ CFLAGS += `python-config --cflags` -fPIC --static
 else
 
 PYTHON_DIR = C:/Python27/include
-CFLAGS += -I$(PYTHON_DIR) -fPIC --static
+CFLAGS += -I$(PYTHON_DIR) -fPIC
 
 endif
 
