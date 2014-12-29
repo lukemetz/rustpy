@@ -31,17 +31,17 @@ macro_rules! prim_pytype (
       }
     }
   )
-)
+);
 
-prim_pytype!(f64, f64, PyFloat_FromDouble, PyFloat_AsDouble, PyFloat_Check)
-prim_pytype!(f32, f64, PyFloat_FromDouble, PyFloat_AsDouble, PyFloat_Check)
-prim_pytype!(i64, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check)
-prim_pytype!(i32, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check)
-prim_pytype!(int, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check)
-prim_pytype!(uint, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check)
-prim_pytype!(u8, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check)
-prim_pytype!(u32, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check)
-prim_pytype!(u64, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check)
+prim_pytype!(f64, f64, PyFloat_FromDouble, PyFloat_AsDouble, PyFloat_Check);
+prim_pytype!(f32, f64, PyFloat_FromDouble, PyFloat_AsDouble, PyFloat_Check);
+prim_pytype!(i64, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check);
+prim_pytype!(i32, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check);
+prim_pytype!(int, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check);
+prim_pytype!(uint, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check);
+prim_pytype!(u8, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check);
+prim_pytype!(u32, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check);
+prim_pytype!(u64, c_long, PyInt_FromLong, PyInt_AsLong, PyInt_Check);
 
 macro_rules! tuple_pytype ({$length:expr,$(($refN:ident, $n:expr, $T:ident)),+} => (
   impl<$($T:ToPyType),+> ToPyType for ($($T,)+) {
@@ -87,7 +87,7 @@ macro_rules! tuple_pytype ({$length:expr,$(($refN:ident, $n:expr, $T:ident)),+} 
       }
     }
   }
-))
+));
 
 impl<T: ToPyType> ToPyType for Vec<T> {
   fn to_py_object<'a>(&'a self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
@@ -129,20 +129,20 @@ impl<T: FromPyType> FromPyType for Vec<T> {
   }
 }
 
-tuple_pytype!(1,(ref0, 0, A))
-tuple_pytype!(2,(ref0, 0, A),(ref1, 1, B))
-tuple_pytype!(3, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C))
-tuple_pytype!(4, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C), (ref3, 3, D))
+tuple_pytype!(1,(ref0, 0, A));
+tuple_pytype!(2,(ref0, 0, A),(ref1, 1, B));
+tuple_pytype!(3, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C));
+tuple_pytype!(4, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C), (ref3, 3, D));
 tuple_pytype!(5, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C), (ref3, 3, D),
-  (ref4, 4, E))
+  (ref4, 4, E));
 tuple_pytype!(6, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C), (ref3, 3, D),
-  (ref4, 4, E), (ref5, 5, F))
+  (ref4, 4, E), (ref5, 5, F));
 tuple_pytype!(7, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C), (ref3, 3, D),
-  (ref4, 4, E), (ref5, 5, F), (ref6, 6, G))
+  (ref4, 4, E), (ref5, 5, F), (ref6, 6, G));
 tuple_pytype!(8, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C), (ref3, 3, D),
-  (ref4, 4, E), (ref5, 5, F), (ref6, 6, G),(ref7, 7, H))
+  (ref4, 4, E), (ref5, 5, F), (ref6, 6, G),(ref7, 7, H));
 tuple_pytype!(9, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C), (ref3, 3, D),
-  (ref4, 4, E), (ref5, 5, F),(ref6, 6, G),(ref7, 7, H),(ref8, 8, I))
+  (ref4, 4, E), (ref5, 5, F),(ref6, 6, G),(ref7, 7, H),(ref8, 8, I));
 
 impl ToPyType for String {
   fn to_py_object<'a, 'b>(&'b self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
@@ -173,6 +173,7 @@ impl FromPyType for String {
 }
 
 impl<'b> ToPyType for &'b str {
+  #![link(name = "macroexpand")]
   fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
     unsafe {
       let raw = state.PyString_FromString(self.to_c_str().unwrap());
@@ -206,7 +207,7 @@ mod test {
   use super::{ToPyType, FromPyType, NoArgs};
   macro_rules! try_or_panic (
       ($e:expr) => (match $e { Ok(e) => e, Err(e) => panic!("{}", e) })
-  )
+  );
 
   macro_rules! num_to_py_object_and_back (
     ($t:ty, $func_name:ident) => (
@@ -219,17 +220,17 @@ mod test {
         assert_eq!(returned, 123i as $t);
       }
     )
-  )
+  );
 
-  num_to_py_object_and_back!(f64, to_from_f64)
-  num_to_py_object_and_back!(f32, to_from_f32)
-  num_to_py_object_and_back!(i64, to_from_i64)
-  num_to_py_object_and_back!(i32, to_from_i32)
-  num_to_py_object_and_back!(int, to_from_int)
-  num_to_py_object_and_back!(uint, to_from_uint)
-  num_to_py_object_and_back!(u8, to_from_u8)
-  num_to_py_object_and_back!(u32, to_from_32)
-  num_to_py_object_and_back!(u64, to_from_54)
+  num_to_py_object_and_back!(f64, to_from_f64);
+  num_to_py_object_and_back!(f32, to_from_f32);
+  num_to_py_object_and_back!(i64, to_from_i64);
+  num_to_py_object_and_back!(i32, to_from_i32);
+  num_to_py_object_and_back!(int, to_from_int);
+  num_to_py_object_and_back!(uint, to_from_uint);
+  num_to_py_object_and_back!(u8, to_from_u8);
+  num_to_py_object_and_back!(u32, to_from_32);
+  num_to_py_object_and_back!(u64, to_from_54);
 
   macro_rules! tuple_to_py_object_and_back (($val:expr, $T:ty, $func_name:ident) => (
     #[test]
@@ -240,14 +241,14 @@ mod test {
       let returned = try_or_panic!(py.from_py_object::<$T>(py_object));
       assert_eq!(returned, $val);
     }
-  ))
+  ));
 
-  tuple_to_py_object_and_back!((1i,), (int,), to_and_from_tuple1)
-  tuple_to_py_object_and_back!((1i,2i), (int,int), to_and_from_tuple2)
-  tuple_to_py_object_and_back!((1i,2i,3i), (int,int,int), to_and_from_tuple3)
-  tuple_to_py_object_and_back!((1i,2i,3i,4i), (int,int,int,int), to_and_from_tuple4)
-  tuple_to_py_object_and_back!((1i,2i,3i,4i,5i), (int,int,int,int,int), to_and_from_tuple5)
-  tuple_to_py_object_and_back!((1i,2i,3i,4i,5i,6i), (int,int,int,int,int,int), to_and_from_tuple6)
+  tuple_to_py_object_and_back!((1i,), (int,), to_and_from_tuple1);
+  tuple_to_py_object_and_back!((1i,2i), (int,int), to_and_from_tuple2);
+  tuple_to_py_object_and_back!((1i,2i,3i), (int,int,int), to_and_from_tuple3);
+  tuple_to_py_object_and_back!((1i,2i,3i,4i), (int,int,int,int), to_and_from_tuple4);
+  tuple_to_py_object_and_back!((1i,2i,3i,4i,5i), (int,int,int,int,int), to_and_from_tuple5);
+  tuple_to_py_object_and_back!((1i,2i,3i,4i,5i,6i), (int,int,int,int,int,int), to_and_from_tuple6);
 
   #[test]
   fn to_and_from_list() {
