@@ -148,7 +148,7 @@ impl ToPyType for String {
   fn to_py_object<'a, 'b>(&'b self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
     // FIXME code duplicated from str slice
     unsafe {
-      let raw = state.PyString_FromString(self.to_c_str().unwrap());
+      let raw = state.PyString_FromString(self.to_c_str().into_inner());
       if raw.is_not_null() && state.PyString_Check(raw) > 0 {
         Ok(PyObject::new(state, raw))
       } else {
@@ -176,7 +176,7 @@ impl<'b> ToPyType for &'b str {
   #![link(name = "macroexpand")]
   fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
     unsafe {
-      let raw = state.PyString_FromString(self.to_c_str().unwrap());
+      let raw = state.PyString_FromString(self.to_c_str().into_inner());
       if raw.is_not_null() && state.PyString_Check(raw) > 0 {
         Ok(PyObject::new(state, raw))
       } else {
