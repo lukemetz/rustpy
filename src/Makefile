@@ -9,8 +9,8 @@ OS := $(shell uname)
 ifeq ($(OS), Linux)
 CFLAGS += `python-config --cflags` -fPIC --static
 else
-CFLAGS += -I$(PYTHON_INCLUDE_DIR) -fPIC --static
-LDFLAGS += -I$(PYTHON_LIB_DIR)
+CFLAGS += -I$(PYTHON_INCLUDE_DIR) -L$(PYTHON_LIB_DIR) -fPIC --static
+LDFLAGS += -lpython27
 endif
 
 .PHONY: all
