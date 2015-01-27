@@ -3,6 +3,17 @@ Rustpy
 
 A simple library to allow for easy use of python from rust.
 
+## Status
+Currently this library has not received much love (pull requests welcome for any interested) and does not build with rust 1.0.
+
+For another library that also strives to bridge the gap between python and rust and might be a little more up to day see:
+
+https://github.com/dgrunwald/rust-python27-sys
+
+https://github.com/dgrunwald/rust-cpython
+
+## How to Use
+
 This library is meant to be middle ware for users wanting to use
 python libraries from rust. It allows users to quickly use existing
 tools and get working on interesting things fast!
