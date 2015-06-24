@@ -3,7 +3,7 @@ use base::PyState;
 
 
 /// Wrapper around the PyObject pointer that the python capi uses.
-#[deriving(Show)]
+#[derive(Debug)]
 #[repr(C)]
 pub struct PyObjectRaw;
 
@@ -49,7 +49,6 @@ extern {
 }
 
 #[link(name = "python2.7")]
-#[link(name = "macroexpand", kind = "static")]
 extern {
   fn RPyFloat_Check(obj : *mut PyObjectRaw) -> c_long;
   fn RPyFloat_CheckExact(obj : *mut PyObjectRaw) -> c_long;
