@@ -31,12 +31,8 @@ fn main() {
 */
 #![crate_type = "lib"]
 
-#![feature(macro_rules)]
-#![feature(link_args)]
-#![feature(unsafe_destructor)]
-
 extern crate libc;
-extern crate alloc;
+#[macro_use] extern crate lazy_static;
 
 pub use base::{ToPyType, FromPyType, PyState, PyObject, PyObjectRaw, PyError, PyIterator};
 pub use primtypes::NoArgs;

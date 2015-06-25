@@ -1,4 +1,4 @@
-#include <Python.h>
+#include <python2.7/Python.h>
 
 int RPyFloat_Check(PyObject* obj) {
   return PyFloat_Check(obj);

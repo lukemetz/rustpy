@@ -1,5 +1,5 @@
-use std::io::Command;
+extern crate gcc;
 
 fn main() {
-  Command::new("make").arg("-C").arg("src").status().unwrap();
+    gcc::compile_library("libmacroexpand.a", &["src/macroexpand.c"]);
 }
