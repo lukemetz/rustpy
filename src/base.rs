@@ -242,7 +242,8 @@ pub trait ToPyType {
 
 /// Rust type that can be extracted from a Python object
 pub trait FromPyType {
-    fn from_py_object<'a>(state: &'a PyState, py_object: PyObject<'a>) -> Result<Self, PyError>;
+    fn from_py_object<'a>(state: &'a PyState, py_object: PyObject<'a>) -> Result<Self, PyError>
+        where Self: Sized;
 }
 
 /// Wrapper around a Python iterator
