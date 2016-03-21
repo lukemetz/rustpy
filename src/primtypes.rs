@@ -91,43 +91,45 @@ macro_rules! tuple_pytype ({$length:expr,$(($refN:ident, $n:tt, $T:ident)),+} =>
 ));
 
 impl<T: ToPyType> ToPyType for Vec<T> {
-  fn to_py_object<'a>(&'a self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
-    unsafe {
-      let raw = state.PyList_New(self.len() as size_t);
-      for (i, item) in self.iter().enumerate() {
-        let pyitem = try!(item.to_py_object(state));
-        state.Py_IncRef(pyitem.raw);
-        state.PyList_SetItem(raw, i as size_t, pyitem.raw);
-      }
-      if !raw.is_null() {
-        Ok(PyObject::new(state, raw))
-      } else {
-        Err(PyError::ToTypeConversionError)
-      }
+    fn to_py_object<'a>(&'a self, state: &'a PyState) -> Result<PyObject<'a>, PyError> {
+        unsafe {
+            let raw = state.PyList_New(self.len() as size_t);
+            for (i, item) in self.iter().enumerate() {
+                let pyitem = try!(item.to_py_object(state));
+                state.Py_IncRef(pyitem.raw);
+                state.PyList_SetItem(raw, i as size_t, pyitem.raw);
+            }
+            if !raw.is_null() {
+                Ok(PyObject::new(state, raw))
+            } else {
+                Err(PyError::ToTypeConversionError)
+            }
+        }
     }
-  }
 }
 
 impl<T: FromPyType> FromPyType for Vec<T> {
-  fn from_py_object(state : &PyState, py_object : PyObject) -> Result<Vec<T>, PyError> {
-    unsafe {
-      if !py_object.raw.is_null() && state.PyList_Check(py_object.raw) > 0 {
-        let raw = py_object.raw;
-        let size = state.PyList_Size(raw) as usize;
-        let mut v = Vec::with_capacity(size);
-        for i in 0 .. size {
-          let rawitem = state.PyList_GetItem(raw, i as size_t);
-          if rawitem.is_null() { return Err(PyError::FromTypeConversionError); }
-          let pyitem = PyObject::new(state, rawitem);
-          let item = try!(state.from_py_object::<T>(pyitem));
-          v.push(item);
+    fn from_py_object(state: &PyState, py_object: PyObject) -> Result<Vec<T>, PyError> {
+        unsafe {
+            if !py_object.raw.is_null() && state.PyList_Check(py_object.raw) > 0 {
+                let raw = py_object.raw;
+                let size = state.PyList_Size(raw) as usize;
+                let mut v = Vec::with_capacity(size);
+                for i in 0..size {
+                    let rawitem = state.PyList_GetItem(raw, i as size_t);
+                    if rawitem.is_null() {
+                        return Err(PyError::FromTypeConversionError);
+                    }
+                    let pyitem = PyObject::new(state, rawitem);
+                    let item = try!(state.from_py_object::<T>(pyitem));
+                    v.push(item);
+                }
+                Ok(v)
+            } else {
+                Err(PyError::FromTypeConversionError)
+            }
         }
-        Ok(v)
-      } else {
-        Err(PyError::FromTypeConversionError)
-      }
     }
-  }
 }
 
 tuple_pytype!(1,(ref0, 0, A));
@@ -146,70 +148,70 @@ tuple_pytype!(9, (ref0, 0, A), (ref1, 1, B), (ref2, 2, C), (ref3, 3, D),
   (ref4, 4, E), (ref5, 5, F),(ref6, 6, G),(ref7, 7, H),(ref8, 8, I));
 
 impl ToPyType for String {
-  fn to_py_object<'a, 'b>(&'b self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
-    // FIXME code duplicated from str slice
-    unsafe {
-      let raw = state.PyString_FromString(CString::new(self.as_bytes()).unwrap().as_ptr());
-      if !raw.is_null() && state.PyString_Check(raw) > 0 {
-        Ok(PyObject::new(state, raw))
-      } else {
-        Err(PyError::ToTypeConversionError)
-      }
+    fn to_py_object<'a, 'b>(&'b self, state: &'a PyState) -> Result<PyObject<'a>, PyError> {
+        // FIXME code duplicated from str slice
+        unsafe {
+            let raw = state.PyString_FromString(CString::new(self.as_bytes()).unwrap().as_ptr());
+            if !raw.is_null() && state.PyString_Check(raw) > 0 {
+                Ok(PyObject::new(state, raw))
+            } else {
+                Err(PyError::ToTypeConversionError)
+            }
+        }
     }
-  }
 }
 
 impl FromPyType for String {
-  fn from_py_object(state : &PyState, py_object : PyObject) -> Result<String, PyError>  {
-    unsafe {
-      if !py_object.raw.is_null() && state.PyString_Check(py_object.raw) > 0 {
-        let c_str = state.PyString_AsString(py_object.raw);
-        let string = String::from_utf8(CStr::from_ptr(c_str).to_bytes().to_vec()).unwrap();
-        Ok(string)
-      } else {
-        Err(PyError::FromTypeConversionError)
-      }
+    fn from_py_object(state: &PyState, py_object: PyObject) -> Result<String, PyError> {
+        unsafe {
+            if !py_object.raw.is_null() && state.PyString_Check(py_object.raw) > 0 {
+                let c_str = state.PyString_AsString(py_object.raw);
+                let string = String::from_utf8(CStr::from_ptr(c_str).to_bytes().to_vec()).unwrap();
+                Ok(string)
+            } else {
+                Err(PyError::FromTypeConversionError)
+            }
+        }
     }
-  }
 }
 
 impl ToPyType for str {
-  fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
-    unsafe {
-      let raw = state.PyString_FromString(CString::new(self).unwrap().as_ptr());
-      if !raw.is_null() && state.PyString_Check(raw) > 0 {
-        Ok(PyObject::new(state, raw))
-      } else {
-        Err(PyError::ToTypeConversionError)
-      }
+    fn to_py_object<'a>(&self, state: &'a PyState) -> Result<PyObject<'a>, PyError> {
+        unsafe {
+            let raw = state.PyString_FromString(CString::new(self).unwrap().as_ptr());
+            if !raw.is_null() && state.PyString_Check(raw) > 0 {
+                Ok(PyObject::new(state, raw))
+            } else {
+                Err(PyError::ToTypeConversionError)
+            }
+        }
     }
-  }
 }
 
 /// Structure that represents an empty tuple in python
 pub struct NoArgs;
 
 impl ToPyType for NoArgs {
-  fn to_py_object<'a>(&self, state : &'a PyState) -> Result<PyObject<'a>, PyError> {
-    Ok(PyObject::empty_tuple(state))
-  }
+    fn to_py_object<'a>(&self, state: &'a PyState) -> Result<PyObject<'a>, PyError> {
+        Ok(PyObject::empty_tuple(state))
+    }
 }
 
 impl FromPyType for NoArgs {
-  fn from_py_object(_ : &PyState, _ : PyObject) -> Result<NoArgs, PyError>  {
-    Ok(NoArgs)
-  }
+    fn from_py_object(_: &PyState, _: PyObject) -> Result<NoArgs, PyError> {
+        Ok(NoArgs)
+    }
 }
 
 #[cfg(test)]
 mod test {
-  use base::PyState;
-  use super::{ToPyType, FromPyType, NoArgs};
-  macro_rules! try_or_panic (
+    use base::PyState;
+    use super::{ToPyType, FromPyType, NoArgs};
+    macro_rules! try_or_panic (
       ($e:expr) => (match $e { Ok(e) => e, Err(e) => panic!("{:?}", e) })
   );
 
-  macro_rules! num_to_py_object_and_back (
+    macro_rules! num_to_py_object_and_back (
     ($t:ty, $func_name:ident) => (
       #[test]
       fn $func_name() {
@@ -222,17 +224,17 @@ mod test {
     )
   );
 
-  num_to_py_object_and_back!(f64, to_from_f64);
-  num_to_py_object_and_back!(f32, to_from_f32);
-  num_to_py_object_and_back!(i64, to_from_i64);
-  num_to_py_object_and_back!(i32, to_from_i32);
-  num_to_py_object_and_back!(isize, to_from_isize);
-  num_to_py_object_and_back!(usize, to_from_usize);
-  num_to_py_object_and_back!(u8, to_from_u8);
-  num_to_py_object_and_back!(u32, to_from_32);
-  num_to_py_object_and_back!(u64, to_from_54);
+    num_to_py_object_and_back!(f64, to_from_f64);
+    num_to_py_object_and_back!(f32, to_from_f32);
+    num_to_py_object_and_back!(i64, to_from_i64);
+    num_to_py_object_and_back!(i32, to_from_i32);
+    num_to_py_object_and_back!(isize, to_from_isize);
+    num_to_py_object_and_back!(usize, to_from_usize);
+    num_to_py_object_and_back!(u8, to_from_u8);
+    num_to_py_object_and_back!(u32, to_from_32);
+    num_to_py_object_and_back!(u64, to_from_54);
 
-  macro_rules! tuple_to_py_object_and_back (($val:expr, $T:ty, $func_name:ident) => (
+    macro_rules! tuple_to_py_object_and_back (($val:expr, $T:ty, $func_name:ident) => (
     #[test]
     fn $func_name() {
       let py = PyState::new();
@@ -243,82 +245,82 @@ mod test {
     }
   ));
 
-  tuple_to_py_object_and_back!((1,), (isize,), to_and_from_tuple1);
-  tuple_to_py_object_and_back!((1,2), (isize,isize), to_and_from_tuple2);
-  tuple_to_py_object_and_back!((1,2,3), (isize,isize,isize), to_and_from_tuple3);
-  tuple_to_py_object_and_back!((1,2,3,4), (isize,isize,isize,isize), to_and_from_tuple4);
-  tuple_to_py_object_and_back!((1,2,3,4,5), (isize,isize,isize,isize,isize), to_and_from_tuple5);
-  tuple_to_py_object_and_back!((1,2,3,4,5,6), (isize,isize,isize,isize,isize,isize), to_and_from_tuple6);
+    tuple_to_py_object_and_back!((1,), (isize,), to_and_from_tuple1);
+    tuple_to_py_object_and_back!((1,2), (isize,isize), to_and_from_tuple2);
+    tuple_to_py_object_and_back!((1,2,3), (isize,isize,isize), to_and_from_tuple3);
+    tuple_to_py_object_and_back!((1,2,3,4), (isize,isize,isize,isize), to_and_from_tuple4);
+    tuple_to_py_object_and_back!((1,2,3,4,5), (isize,isize,isize,isize,isize), to_and_from_tuple5);
+    tuple_to_py_object_and_back!((1,2,3,4,5,6), (isize,isize,isize,isize,isize,isize), to_and_from_tuple6);
 
-  #[test]
-  fn to_and_from_list() {
-    let val = vec!(1,2,3);
-    let py = PyState::new();
-    let py_object = try_or_panic!(val.to_py_object(&py));
-    let returned = try_or_panic!(py.from_py_object::<Vec<isize>>(py_object));
-    assert_eq!(returned, val);
-  }
+    #[test]
+    fn to_and_from_list() {
+        let val = vec![1, 2, 3];
+        let py = PyState::new();
+        let py_object = try_or_panic!(val.to_py_object(&py));
+        let returned = try_or_panic!(py.from_py_object::<Vec<isize>>(py_object));
+        assert_eq!(returned, val);
+    }
 
-  #[test]
-  fn mixed_convert() {
-    let py = PyState::new();
-    let value = 123f32;
-    let py_object = try_or_panic!(value.to_py_object(&py));
-    let result = py.from_py_object::<isize>(py_object);
-    match result {
-      Err(_) => (),
-      Ok(x) => panic!("should have failed but got {:?}", x)
-    };
-  }
+    #[test]
+    fn mixed_convert() {
+        let py = PyState::new();
+        let value = 123f32;
+        let py_object = try_or_panic!(value.to_py_object(&py));
+        let result = py.from_py_object::<isize>(py_object);
+        match result {
+            Err(_) => (),
+            Ok(x) => panic!("should have failed but got {:?}", x),
+        };
+    }
 
-  #[test]
-  fn float_to_tuple_should_err() {
-    let py = PyState::new();
-    let value = 123f32;
-    let py_object = try_or_panic!(value.to_py_object(&py));
-    let result = py.from_py_object::<(isize,isize)>(py_object);
-    match result {
-      Err(_) => (),
-      Ok(x) => panic!("should have failed but got {:?}", x)
-    };
-  }
+    #[test]
+    fn float_to_tuple_should_err() {
+        let py = PyState::new();
+        let value = 123f32;
+        let py_object = try_or_panic!(value.to_py_object(&py));
+        let result = py.from_py_object::<(isize, isize)>(py_object);
+        match result {
+            Err(_) => (),
+            Ok(x) => panic!("should have failed but got {:?}", x),
+        };
+    }
 
-  #[test]
-  fn tuple_to_float_should_err() {
-    let py = PyState::new();
-    let value = (123f32, 234f32, 1f32, 3f32);
-    let py_object = try_or_panic!(value.to_py_object(&py));
-    let result = py.from_py_object::<f32>(py_object);
-    match result {
-      Err(_) => (),
-      Ok(x) => panic!("should have failed but got {:?}", x)
-    };
-  }
+    #[test]
+    fn tuple_to_float_should_err() {
+        let py = PyState::new();
+        let value = (123f32, 234f32, 1f32, 3f32);
+        let py_object = try_or_panic!(value.to_py_object(&py));
+        let result = py.from_py_object::<f32>(py_object);
+        match result {
+            Err(_) => (),
+            Ok(x) => panic!("should have failed but got {:?}", x),
+        };
+    }
 
-  #[test]
-  fn string_to_py_object_and_back() {
-    let py = PyState::new();
-    let value = "Hello world".to_string();
-    let py_object = try_or_panic!(value.to_py_object(&py));
-    let result = try_or_panic!(py.from_py_object::<String>(py_object));
-    assert_eq!(&result, "Hello world");
-  }
+    #[test]
+    fn string_to_py_object_and_back() {
+        let py = PyState::new();
+        let value = "Hello world".to_string();
+        let py_object = try_or_panic!(value.to_py_object(&py));
+        let result = try_or_panic!(py.from_py_object::<String>(py_object));
+        assert_eq!(&result, "Hello world");
+    }
 
-  #[test]
-  fn ref_string_to_py_object_and_back_to_string() {
-    let py = PyState::new();
-    let value = "Hello world";
-    let py_object = try_or_panic!(value.to_py_object(&py));
-    let result = try_or_panic!(py.from_py_object::<String>(py_object));
-    assert_eq!(&result, "Hello world");
-  }
+    #[test]
+    fn ref_string_to_py_object_and_back_to_string() {
+        let py = PyState::new();
+        let value = "Hello world";
+        let py_object = try_or_panic!(value.to_py_object(&py));
+        let result = try_or_panic!(py.from_py_object::<String>(py_object));
+        assert_eq!(&result, "Hello world");
+    }
 
-  #[test]
-  fn no_args() {
-    // Just Don't fail to convert. Assuming its correct
-    let py = PyState::new();
-    let value = NoArgs;
-    let py_object = try_or_panic!(value.to_py_object(&py));
-    let _ = try_or_panic!(py.from_py_object::<NoArgs>(py_object));
-  }
+    #[test]
+    fn no_args() {
+        // Just Don't fail to convert. Assuming its correct
+        let py = PyState::new();
+        let value = NoArgs;
+        let py_object = try_or_panic!(value.to_py_object(&py));
+        let _ = try_or_panic!(py.from_py_object::<NoArgs>(py_object));
+    }
 }
